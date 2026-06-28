@@ -550,6 +550,7 @@ function renderWorkout() {
         <td>
           <span class="weight-val">${w}</span><span style="font-size:11px;color:var(--muted);margin-left:2px">${unitLabel()}</span><br>
           <span class="pct-label">${s.pct}%</span>
+          <div class="plate-display">${plateHTML(w)}</div>
         </td>
         <td style="text-align:center"><span style="color:var(--muted);font-size:14px">${s.reps}</span></td>
         <td style="text-align:right"><div class="set-check ${setDone['w'+i] ? 'done' : ''}" onclick="toggleSet('w${i}', 0)"></div></td>
