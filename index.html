@@ -7,11 +7,11 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#111111">
-<title>5/3/1 Tracker</title>
+<title>Madcow 5×5</title>
 <style>
   :root {
     --bg: #111111; --surface: #1a1a1a; --surface2: #222222; --border: #2e2e2e;
-    --accent: #e8ff47; --accent-dim: #b8cc30; --text: #f0f0f0; --muted: #888888;
+    --accent: #e8ff47; --text: #f0f0f0; --muted: #888888;
     --danger: #ff4f4f; --success: #47e8a0; --radius: 12px;
     --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
@@ -27,111 +27,98 @@
   .screen.active { display: block; }
 
   h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
-  h2 { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
   h3 { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
-  .week-badge { display: inline-block; background: var(--accent); color: #111; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px; margin-bottom: 4px; }
-  .deload-badge { background: var(--muted); color: var(--bg); }
+
+  .session-badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .badge-a { background: #4f8eff; color: #fff; }
+  .badge-b { background: #8e44ad; color: #fff; }
+  .badge-c { background: var(--accent); color: #111; }
 
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
-  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-
-  .lift-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-  .lift-btn { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 12px; cursor: pointer; color: var(--text); font-family: var(--font); font-size: 15px; font-weight: 500; text-align: left; transition: border-color 0.15s, background 0.15s; }
-  .lift-btn.selected { border-color: var(--accent); background: var(--surface2); }
-  .lift-btn .lift-tm { font-size: 12px; color: var(--muted); margin-top: 3px; }
-  .lift-icon { font-size: 22px; margin-bottom: 6px; }
 
   .sets-table { width: 100%; border-collapse: collapse; }
   .sets-table th { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; padding: 0 0 10px; text-align: left; }
   .sets-table th:last-child, .sets-table td:last-child { text-align: right; }
-  .sets-table td { padding: 8px 0; border-top: 1px solid var(--border); font-size: 15px; vertical-align: middle; }
-  .set-row td:first-child { color: var(--muted); font-size: 13px; width: 30px; }
-  .weight-val { font-weight: 600; font-size: 16px; }
-  .pct-label { font-size: 12px; color: var(--muted); }
-  .amrap-row td { color: var(--accent); }
-  .amrap-row .weight-val { color: var(--accent); }
-  .warmup-row td { color: var(--muted); }
-  .warmup-row .weight-val { color: var(--muted); font-size: 14px; }
-  .section-divider { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; padding: 10px 0 4px; border-top: 1px solid var(--border); }
+  .sets-table td { padding: 7px 0; border-top: 1px solid var(--border); font-size: 14px; vertical-align: middle; }
+  .sets-table td:first-child { color: var(--muted); font-size: 12px; width: 28px; }
+  .weight-val { font-weight: 600; font-size: 15px; }
+  .pct-label { font-size: 11px; color: var(--muted); }
+  .warmup-row td { opacity: 0.6; }
+  .work-row td { }
+  .heavy-row td { color: var(--accent); }
+  .heavy-row .weight-val { color: var(--accent); }
+  .section-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; padding: 8px 0 3px; border-top: 1px solid var(--border); }
 
-  .reps-input { width: 56px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 16px; font-family: var(--font); text-align: center; padding: 6px; -moz-appearance: textfield; }
-  .reps-input::-webkit-inner-spin-button, .reps-input::-webkit-outer-spin-button { -webkit-appearance: none; }
-  .reps-input:focus { outline: none; border-color: var(--accent); }
-
-  .set-check { width: 24px; height: 24px; border: 2px solid var(--border); border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; flex-shrink: 0; }
+  .set-check { width: 24px; height: 24px; border: 2px solid var(--border); border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; flex-shrink: 0; margin-left: auto; }
   .set-check.done { background: var(--accent); border-color: var(--accent); }
   .set-check.done::after { content: ''; display: block; width: 6px; height: 10px; border: 2px solid #111; border-top: none; border-left: none; transform: rotate(45deg) translateY(-1px); }
 
   .btn { display: block; width: 100%; padding: 15px; border-radius: var(--radius); font-size: 16px; font-weight: 600; font-family: var(--font); cursor: pointer; border: none; transition: opacity 0.15s, transform 0.1s; }
-  .btn:active { transform: scale(0.98); opacity: 0.9; }
+  .btn:active { transform: scale(0.98); }
   .btn-primary { background: var(--accent); color: #111; }
   .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
   .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
-  .btn-google { background: #fff; color: #333; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; gap: 10px; }
   .btn-sm { padding: 8px 14px; font-size: 13px; width: auto; display: inline-block; }
+  .btn-google { background: #fff; color: #333; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; gap: 10px; }
 
-  .input-group { margin-bottom: 16px; }
-  .input-group label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
-  .input-group input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 16px; font-family: var(--font); padding: 12px 14px; }
-  .input-group input:focus { outline: none; border-color: var(--accent); }
+  .lift-section { margin-bottom: 16px; }
+  .lift-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .lift-name { font-size: 16px; font-weight: 600; }
+  .lift-workweight { font-size: 13px; color: var(--muted); }
 
-  .history-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; }
-  .history-meta { display: flex; justify-content: space-between; align-items: flex-start; }
-  .history-lift { font-size: 16px; font-weight: 600; }
-  .history-date { font-size: 12px; color: var(--muted); }
-  .history-sets { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-  .history-set { background: var(--surface2); border-radius: 6px; padding: 4px 10px; font-size: 12px; color: var(--muted); }
-  .history-set.amrap-set { color: var(--accent); background: rgba(232,255,71,0.1); }
-  .history-set.pr-set { color: var(--success); background: rgba(71,232,160,0.1); }
-  .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
-  .empty-state svg { width: 48px; height: 48px; stroke: var(--border); fill: none; stroke-width: 1.5; margin-bottom: 16px; }
+  .plate-display { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+  .plate { border-radius: 5px; padding: 3px 8px; font-size: 11px; font-weight: 600; }
+  .p-25{background:#c0392b;color:#fff} .p-20{background:#2980b9;color:#fff} .p-15{background:#f39c12;color:#111}
+  .p-10{background:#27ae60;color:#fff} .p-5{background:#8e44ad;color:#fff} .p-2{background:#555;color:#fff}
+  .p-1{background:#444;color:#fff} .p-bar{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
 
-  .setup-lift { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-  .setup-lift-name { font-size: 15px; font-weight: 500; width: 110px; flex-shrink: 0; }
-  .setup-lift input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 16px; font-family: var(--font); padding: 10px 12px; }
-  .setup-lift input:focus { outline: none; border-color: var(--accent); }
-  .setup-lift .unit { color: var(--muted); font-size: 13px; width: 20px; }
-
-  .complete-banner { background: rgba(71,232,160,0.1); border: 1px solid rgba(71,232,160,0.3); border-radius: var(--radius); padding: 16px; text-align: center; margin-bottom: 16px; }
-  .complete-banner .big { font-size: 32px; margin-bottom: 4px; }
-  .complete-banner p { color: var(--success); font-weight: 600; }
-
-  ::-webkit-scrollbar { width: 0; }
-  .screen-header { margin-bottom: 24px; }
-  .screen-header .subtitle { color: var(--muted); font-size: 14px; margin-top: 4px; }
-  .divider { height: 1px; background: var(--border); margin: 16px 0; }
-  .row { display: flex; justify-content: space-between; align-items: center; }
-  .cycle-info { background: var(--surface2); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
-  .cycle-info span { color: var(--text); font-weight: 500; }
-
-  /* REST TIMER */
   .rest-timer { position: fixed; top: 0; left: 0; right: 0; background: var(--surface); border-bottom: 1px solid var(--border); z-index: 200; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; transform: translateY(-100%); transition: transform 0.3s ease; }
   .rest-timer.visible { transform: translateY(0); }
   .rest-timer-time { font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--accent); }
   .rest-timer-label { font-size: 12px; color: var(--muted); }
   .rest-timer-close { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; color: var(--text); font-family: var(--font); font-size: 13px; cursor: pointer; }
 
-  /* PLATE CALCULATOR */
-  .plate-display { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
-  .plate { border-radius: 6px; padding: 4px 10px; font-size: 13px; font-weight: 600; }
-  .p-25 { background: #c0392b; color: #fff; }
-  .p-20 { background: #2980b9; color: #fff; }
-  .p-15 { background: #f39c12; color: #111; }
-  .p-10 { background: #27ae60; color: #fff; }
-  .p-5  { background: #8e44ad; color: #fff; }
-  .p-2  { background: #555; color: #fff; }
-  .p-1  { background: #444; color: #fff; }
-  .p-bar { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+  .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 10px 20px; font-size: 14px; opacity: 0; transition: opacity 0.3s, transform 0.3s; pointer-events: none; white-space: nowrap; z-index: 300; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.success { border-color: var(--success); color: var(--success); }
+  .toast.error { border-color: var(--danger); color: var(--danger); }
 
-  /* VOLUME CHART */
-  .chart-wrap { overflow-x: auto; }
-  canvas { display: block; }
+  .history-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; }
+  .history-meta { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .history-session { font-size: 16px; font-weight: 600; }
+  .history-date { font-size: 12px; color: var(--muted); }
+  .history-lifts { display: flex; flex-direction: column; gap: 4px; }
+  .history-lift-row { display: flex; justify-content: space-between; font-size: 13px; }
+  .history-lift-name { color: var(--muted); }
+  .history-lift-weight { font-weight: 500; }
 
-  /* SETTINGS SECTIONS */
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .empty-state svg { width: 48px; height: 48px; stroke: var(--border); fill: none; stroke-width: 1.5; margin-bottom: 16px; }
+
+  .screen-header { margin-bottom: 24px; }
+  .screen-header .subtitle { color: var(--muted); font-size: 14px; margin-top: 4px; }
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  .session-nav { display: flex; gap: 8px; margin-bottom: 20px; }
+  .session-nav-btn { flex: 1; padding: 10px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); color: var(--muted); font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; text-align: center; transition: all 0.15s; }
+  .session-nav-btn.active-a { border-color: #4f8eff; color: #4f8eff; background: rgba(79,142,255,0.08); }
+  .session-nav-btn.active-b { border-color: #8e44ad; color: #8e44ad; background: rgba(142,68,173,0.08); }
+  .session-nav-btn.active-c { border-color: var(--accent); color: var(--accent); background: rgba(232,255,71,0.08); }
+
+  .week-info { background: var(--surface2); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+  .week-info span { color: var(--text); font-weight: 500; }
+
+  .complete-banner { background: rgba(71,232,160,0.1); border: 1px solid rgba(71,232,160,0.3); border-radius: var(--radius); padding: 16px; text-align: center; margin-bottom: 16px; }
+  .complete-banner .big { font-size: 32px; margin-bottom: 4px; }
+  .complete-banner p { color: var(--success); font-weight: 600; }
+
   .settings-section { margin-bottom: 20px; }
   .settings-section-title { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 10px; padding-left: 4px; }
 
-  /* INTEGRATION STATUS */
+  .tm-adjust-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .tm-adj-btn { width: 36px; height: 36px; border-radius: 8px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-family: var(--font); flex-shrink: 0; }
+  .tm-val-display { flex: 1; text-align: center; font-size: 17px; font-weight: 600; }
+
   .integration-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; }
   .integration-row:not(:last-child) { border-bottom: 1px solid var(--border); }
   .integration-info { display: flex; align-items: center; gap: 12px; }
@@ -139,29 +126,21 @@
   .integration-name { font-size: 15px; font-weight: 500; }
   .integration-status { font-size: 12px; color: var(--muted); margin-top: 2px; }
   .status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; }
-  .dot-green { background: var(--success); }
-  .dot-grey { background: var(--muted); }
+  .dot-green { background: var(--success); } .dot-grey { background: var(--muted); }
 
-  /* TOAST */
-  .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 10px 20px; font-size: 14px; opacity: 0; transition: opacity 0.3s, transform 0.3s; pointer-events: none; white-space: nowrap; z-index: 300; }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-  .toast.success { border-color: var(--success); color: var(--success); }
-  .toast.error { border-color: var(--danger); color: var(--danger); }
+  .stall-banner { background: rgba(255,79,79,0.1); border: 1px solid rgba(255,79,79,0.3); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 12px; font-size: 13px; color: var(--danger); }
 
-  /* TM ADJUST */
-  .tm-adjust-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-  .tm-adj-btn { width: 36px; height: 36px; border-radius: 8px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-family: var(--font); flex-shrink: 0; }
-  .tm-val-display { flex: 1; text-align: center; font-size: 18px; font-weight: 600; }
-
-  /* CHART TABS */
+  .chart-wrap { overflow-x: auto; }
+  canvas { display: block; }
   .chart-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
-  .chart-tab { flex: 1; padding: 7px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 12px; font-weight: 500; cursor: pointer; font-family: var(--font); text-align: center; transition: all 0.15s; }
+  .chart-tab { flex: 1; padding: 7px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 11px; font-weight: 500; cursor: pointer; font-family: var(--font); text-align: center; transition: all 0.15s; }
   .chart-tab.active { background: var(--accent); border-color: var(--accent); color: #111; font-weight: 700; }
+
+  ::-webkit-scrollbar { width: 0; }
 </style>
 </head>
 <body>
 
-<!-- REST TIMER -->
 <div class="rest-timer" id="rest-timer">
   <div>
     <div class="rest-timer-label">Rest timer</div>
@@ -170,21 +149,24 @@
   <button class="rest-timer-close" onclick="stopTimer()">Dismiss</button>
 </div>
 
-<!-- TOAST -->
 <div class="toast" id="toast"></div>
 
 <!-- WORKOUT SCREEN -->
 <div class="screen active" id="screen-workout">
   <div class="screen-header">
-    <div id="workout-week-badge" class="week-badge">Week 1</div>
-    <h1>Today's Session</h1>
-    <p class="subtitle" id="workout-subtitle">Select a lift to begin</p>
+    <div id="session-badge" class="session-badge badge-a">Session A</div>
+    <h1>Madcow 5×5</h1>
+    <p class="subtitle" id="workout-subtitle">Monday — Squat, Bench, Row</p>
   </div>
-  <div class="cycle-info">
-    <div>Cycle <span id="cycle-num">1</span></div>
-    <div>Week <span id="week-num">1</span> of 4</div>
+  <div class="week-info">
+    <div>Week <span id="week-num">1</span></div>
+    <div>Session <span id="session-num">1</span> of all time</div>
   </div>
-  <div class="lift-grid" id="lift-selector"></div>
+  <div class="session-nav">
+    <button class="session-nav-btn" id="nav-a" onclick="switchSession('A')">A — Mon</button>
+    <button class="session-nav-btn" id="nav-b" onclick="switchSession('B')">B — Wed</button>
+    <button class="session-nav-btn" id="nav-c" onclick="switchSession('C')">C — Fri</button>
+  </div>
   <div id="workout-content"></div>
 </div>
 
@@ -192,84 +174,74 @@
 <div class="screen" id="screen-progress">
   <div class="screen-header">
     <h1>Progress</h1>
-    <p class="subtitle">Volume &amp; AMRAP history</p>
+    <p class="subtitle">Work set weights over time</p>
   </div>
   <div class="chart-tabs">
     <button class="chart-tab active" onclick="setChartLift('squat',this)">Squat</button>
     <button class="chart-tab" onclick="setChartLift('bench',this)">Bench</button>
-    <button class="chart-tab" onclick="setChartLift('deadlift',this)">Deadlift</button>
+    <button class="chart-tab" onclick="setChartLift('row',this)">Row</button>
     <button class="chart-tab" onclick="setChartLift('ohp',this)">OHP</button>
+    <button class="chart-tab" onclick="setChartLift('deadlift',this)">Deadlift</button>
   </div>
   <div class="card">
-    <h3 style="margin-bottom:12px">AMRAP Reps</h3>
-    <div class="chart-wrap"><canvas id="chart-amrap" height="160"></canvas></div>
+    <h3 style="margin-bottom:12px">Work Set Weight (kg)</h3>
+    <div class="chart-wrap"><canvas id="chart-main" height="160"></canvas></div>
   </div>
-  <div class="card">
-    <h3 style="margin-bottom:12px">Tonnage (kg per session)</h3>
-    <div class="chart-wrap"><canvas id="chart-volume" height="160"></canvas></div>
+  <div class="card" style="margin-top:12px">
+    <h3 style="margin-bottom:8px">Current Working Weights</h3>
+    <div id="current-weights-display"></div>
   </div>
-  <div id="history-list-progress"></div>
 </div>
 
 <!-- HISTORY SCREEN -->
 <div class="screen" id="screen-history">
   <div class="screen-header">
     <h1>History</h1>
-    <p class="subtitle">Your logged sessions</p>
+    <p class="subtitle">Logged sessions</p>
   </div>
   <div id="history-list"></div>
 </div>
 
 <!-- SETTINGS SCREEN -->
 <div class="screen" id="screen-settings">
-  <div class="screen-header">
-    <h1>Settings</h1>
-  </div>
+  <div class="screen-header"><h1>Settings</h1></div>
 
-  <!-- TRAINING MAXES -->
   <div class="settings-section">
-    <div class="settings-section-title">Training Maxes</div>
+    <div class="settings-section-title">Working Weights</div>
     <div class="card">
-      <p style="font-size:13px;color:var(--muted);margin-bottom:16px">90% of your true 1RM. Adjust individually if needed.</p>
-      <div id="tm-adjust-rows"></div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Your current work set weight for each lift. These auto-increment by 2.5kg each week.</p>
+      <div id="weight-adjust-rows"></div>
     </div>
   </div>
 
-  <!-- PREFERENCES -->
   <div class="settings-section">
     <div class="settings-section-title">Preferences</div>
     <div class="card">
-      <div class="setup-lift">
-        <span class="setup-lift-name">Bar weight</span>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <span style="font-size:14px;width:100px;flex-shrink:0">Bar weight</span>
         <input type="number" id="bar-weight" value="20" inputmode="decimal" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:16px;font-family:var(--font);padding:10px 12px;">
-        <span class="unit">kg</span>
+        <span style="color:var(--muted);font-size:13px">kg</span>
       </div>
       <div class="divider"></div>
-      <div style="margin-bottom:12px">
-        <label style="display:flex;align-items:center;gap:10px;font-size:14px;cursor:pointer">
-          <input type="checkbox" id="use-lbs" style="width:18px;height:18px;accent-color:var(--accent)">
-          Use lbs instead of kg
-        </label>
-      </div>
       <div style="margin-bottom:12px">
         <label style="display:flex;align-items:center;gap:10px;font-size:14px;cursor:pointer">
           <input type="checkbox" id="show-warmup" checked style="width:18px;height:18px;accent-color:var(--accent)">
           Show warm-up sets
         </label>
       </div>
-      <div>
+      <div style="margin-bottom:4px">
         <p style="font-size:13px;color:var(--muted);margin-bottom:8px">Round weights to nearest:</p>
         <div style="display:flex;gap:8px">
           <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;cursor:pointer;font-size:14px">
-            <input type="radio" name="rounding" value="1.25" style="accent-color:var(--accent)"> 1.25kg
+            <input type="radio" name="rounding" value="2.5" style="accent-color:var(--accent)"> 2.5kg
           </label>
           <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;cursor:pointer;font-size:14px">
-            <input type="radio" name="rounding" value="2.5" checked style="accent-color:var(--accent)"> 2.5kg
+            <input type="radio" name="rounding" value="5" checked style="accent-color:var(--accent)"> 5kg
           </label>
         </div>
       </div>
       <div style="margin-top:12px">
-        <p style="font-size:13px;color:var(--muted);margin-bottom:8px">Rest timer duration:</p>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:8px">Rest timer:</p>
         <div style="display:flex;gap:8px">
           <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;cursor:pointer;font-size:13px">
             <input type="radio" name="rest" value="120" style="accent-color:var(--accent)"> 2 min
@@ -285,7 +257,6 @@
     </div>
   </div>
 
-  <!-- INTEGRATIONS -->
   <div class="settings-section">
     <div class="settings-section-title">Integrations</div>
     <div class="card">
@@ -294,18 +265,14 @@
           <div class="integration-icon">📊</div>
           <div>
             <div class="integration-name">Google Sheets</div>
-            <div class="integration-status" id="sheets-status">
-              <span class="status-dot dot-grey"></span>Not connected
-            </div>
+            <div class="integration-status" id="sheets-status"><span class="status-dot dot-grey"></span>Not connected</div>
           </div>
         </div>
         <button class="btn btn-secondary btn-sm" id="sheets-btn" onclick="handleSheetsConnect()">Connect</button>
       </div>
       <div id="sheets-info" style="display:none;margin-top:8px;padding-top:12px;border-top:1px solid var(--border)">
-        <p style="font-size:12px;color:var(--muted)">Sessions are automatically added to your <strong style="color:var(--text)">5/3/1 Tracker</strong> spreadsheet in Google Drive.</p>
-        <div style="margin-top:8px">
-          <a id="sheets-link" href="#" target="_blank" style="font-size:13px;color:var(--accent);text-decoration:none">Open spreadsheet →</a>
-        </div>
+        <p style="font-size:12px;color:var(--muted)">Sessions sync automatically to your <strong style="color:var(--text)">Madcow Tracker</strong> spreadsheet.</p>
+        <div style="margin-top:8px"><a id="sheets-link" href="#" target="_blank" style="font-size:13px;color:var(--accent);text-decoration:none">Open spreadsheet →</a></div>
       </div>
     </div>
   </div>
@@ -314,7 +281,6 @@
   <button class="btn btn-danger" onclick="resetApp()">Reset all data</button>
 </div>
 
-<!-- NAV -->
 <nav class="nav">
   <button class="nav-btn active" onclick="showScreen('workout',this)">
     <svg viewBox="0 0 24 24"><path d="M6.5 6.5L4 9l8 8 8-8-2.5-2.5M9 3.5L12 1l3 2.5"/><path d="M12 9v8M8 13h8"/></svg>
@@ -325,7 +291,7 @@
     Progress
   </button>
   <button class="nav-btn" onclick="showScreen('history',this)">
-    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>
+    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
     History
   </button>
   <button class="nav-btn" onclick="showScreen('settings',this)">
@@ -334,114 +300,136 @@
   </button>
 </nav>
 
-<!-- Google Identity Services -->
 <script src="https://accounts.google.com/gsi/client" async></script>
-
 <script>
 // ── CONFIG ────────────────────────────────────────────────────────
 const GOOGLE_CLIENT_ID = '478746736469-aeit2it0t4skshul24dlqvqlik6i6u8i.apps.googleusercontent.com';
 const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
 
-// ── CONSTANTS ─────────────────────────────────────────────────────
-const LIFTS = [
-  { id: 'squat',    name: 'Squat',       icon: '🏋️' },
-  { id: 'bench',    name: 'Bench Press', icon: '🫲' },
-  { id: 'deadlift', name: 'Deadlift',    icon: '⬆️' },
-  { id: 'ohp',      name: 'OHP',         icon: '🔝' },
-];
+// ── MADCOW STRUCTURE ──────────────────────────────────────────────
+// Session A: Squat 4x5+1x5, Bench 4x5+1x5, Row 4x5+1x5
+// Session B: Squat light (80%), OHP 4x5+1x5, Deadlift 4x5+1x5
+// Session C: Squat 4x5+1x5+1x3+1x8 (heavy), Bench heavy, Row heavy
 
-const WEEKS = [
-  { label: 'Week 1', sets: [
-    { pct: 65, reps: 5 }, { pct: 75, reps: 5 }, { pct: 85, reps: '5+', amrap: true }
-  ]},
-  { label: 'Week 2', sets: [
-    { pct: 70, reps: 3 }, { pct: 80, reps: 3 }, { pct: 90, reps: '3+', amrap: true }
-  ]},
-  { label: 'Week 3', sets: [
-    { pct: 75, reps: 5 }, { pct: 85, reps: 3 }, { pct: 95, reps: '1+', amrap: true }
-  ]},
-  { label: 'Week 4 (Deload)', sets: [
-    { pct: 40, reps: 5 }, { pct: 50, reps: 5 }, { pct: 60, reps: 5 }
-  ], deload: true },
-];
+const SESSIONS = {
+  A: {
+    label: 'Session A', day: 'Monday',
+    lifts: ['squat','bench','row'],
+    type: 'normal'
+  },
+  B: {
+    label: 'Session B', day: 'Wednesday',
+    lifts: ['squat_light','ohp','deadlift'],
+    type: 'normal'
+  },
+  C: {
+    label: 'Session C', day: 'Friday',
+    lifts: ['squat','bench','row'],
+    type: 'heavy'
+  }
+};
 
-const WARMUP_SETS = [
-  { pct: 40, reps: 5 },
-  { pct: 50, reps: 5 },
-  { pct: 60, reps: 3 },
-];
+const LIFT_NAMES = {
+  squat: 'Squat', bench: 'Bench Press', row: 'Barbell Row',
+  ohp: 'OHP', deadlift: 'Deadlift', squat_light: 'Squat (Light)'
+};
 
-// Plates available (per side), in kg
-const PLATES_KG = [25, 20, 15, 10, 5, 2.5, 1.25];
-const PLATES_LBS = [45, 35, 25, 10, 5, 2.5];
-const PLATE_CLASSES = { 25: 'p-25', 20: 'p-20', 15: 'p-15', 10: 'p-10', 5: 'p-5', 2.5: 'p-2', 1.25: 'p-1', 45: 'p-25', 35: 'p-20' };
+const LIFT_KEYS = { squat: 'squat', bench: 'bench', row: 'row', ohp: 'ohp', deadlift: 'deadlift', squat_light: 'squat' };
+
+// Warmup: 40%, 50%, 60% then working sets
+// Normal session: 4 ramp sets (40/50/60/80%) + 1 work set (100%)  
+// Actually Madcow ramps: 40/50/60/80% then 100%
+// Heavy session (C): ramp + 100%x5, 105%x3, 95%x8
+const WARMUP_PCTS = [0.4, 0.5, 0.6, 0.8];
 
 // ── STATE ─────────────────────────────────────────────────────────
-function loadState() {
-  try { return JSON.parse(localStorage.getItem('531_state') || 'null') || defaultState(); }
-  catch { return defaultState(); }
-}
 function defaultState() {
   return {
-    cycle: 1, week: 1,
-    tms: { squat: 0, bench: 0, deadlift: 0, ohp: 0 },
-    useLbs: false, rounding: 5, barWeight: 20,
-    showWarmup: true, restSeconds: 180,
-    sessions: [], completedThisWeek: [],
+    week: 1,
+    totalSessions: 0,
+    // Working weights (the 5-rep work set weight)
+    weights: { squat: 70, bench: 45, row: 52.5, ohp: 32.5, deadlift: 80 },
+    // Stall tracking: consecutive fails per lift
+    stalls: { squat: 0, bench: 0, row: 0, ohp: 0, deadlift: 0 },
+    barWeight: 20,
+    rounding: 2.5,
+    showWarmup: true,
+    restSeconds: 180,
+    sessions: [],
+    currentSession: 'A',
     google: { connected: false, token: null, spreadsheetId: null, spreadsheetUrl: null }
   };
 }
-function save() { localStorage.setItem('531_state', JSON.stringify(state)); }
+
+function loadState() {
+  try { return JSON.parse(localStorage.getItem('madcow_state') || 'null') || defaultState(); }
+  catch { return defaultState(); }
+}
+function save() { localStorage.setItem('madcow_state', JSON.stringify(state)); }
 
 let state = loadState();
-let activeLift = null;
 let setDone = {};
-let amrapReps = {};
 let timerInterval = null;
 let timerRemaining = 0;
 let chartLift = 'squat';
 let googleTokenClient = null;
 
 // ── UTILS ─────────────────────────────────────────────────────────
-function round(val, nearest) { return Math.round(val / nearest) * nearest; }
-function calcWeight(tm, pct, rounding) { return Math.max(0, round(tm * pct / 100, rounding)); }
-function weekData() { return WEEKS[state.week - 1]; }
-function unitLabel() { return state.useLbs ? 'lbs' : 'kg'; }
+function roundWeight(val, nearest) { return Math.round(val / nearest) * nearest; }
+function r(w) { return roundWeight(w, state.rounding || 2.5); }
+function unitLabel() { return 'kg'; }
 
-function calcPlates(targetWeight, barWeight, useLbs) {
-  const plates = useLbs ? PLATES_LBS : PLATES_KG;
-  let remaining = (targetWeight - barWeight) / 2;
-  const result = [];
-  for (const p of plates) {
-    while (remaining >= p - 0.01) {
-      result.push(p);
-      remaining -= p;
-      remaining = Math.round(remaining * 1000) / 1000;
-    }
-  }
-  return result;
-}
+const PLATES_KG = [25, 20, 15, 10, 5, 2.5, 1.25];
+const PLATE_CLASSES = { 25:'p-25',20:'p-20',15:'p-15',10:'p-10',5:'p-5',2.5:'p-2',1.25:'p-1' };
 
-function plateHTML(targetWeight) {
+function calcPlates(targetWeight) {
   const bar = state.barWeight || 20;
-  if (targetWeight <= bar) return `<span class="plate p-bar">${bar}${unitLabel()} bar only</span>`;
-  const plates = calcPlates(targetWeight, bar, state.useLbs);
-  if (!plates.length) return `<span class="plate p-bar">bar only</span>`;
-  return `<span class="plate p-bar">bar</span>` + plates.map(p => {
-    const cls = PLATE_CLASSES[p] || 'p-2';
-    return `<span class="plate ${cls}">${p}</span>`;
-  }).join('') + `<span style="font-size:11px;color:var(--muted);margin-left:4px">each side</span>`;
+  if (targetWeight <= bar) return `<span class="plate p-bar">${bar}kg bar only</span>`;
+  let remaining = (targetWeight - bar) / 2;
+  const result = [];
+  for (const p of PLATES_KG) {
+    while (remaining >= p - 0.01) { result.push(p); remaining -= p; remaining = Math.round(remaining*1000)/1000; }
+  }
+  if (!result.length) return `<span class="plate p-bar">bar only</span>`;
+  return `<span class="plate p-bar">bar</span>` + result.map(p => `<span class="plate ${PLATE_CLASSES[p]||'p-2'}">${p}</span>`).join('') + `<span style="font-size:10px;color:var(--muted);margin-left:3px">each side</span>`;
 }
 
-// ── TOAST ─────────────────────────────────────────────────────────
-function showToast(msg, type = '') {
+function getSetsForLift(liftKey, sessionType) {
+  const workWeight = state.weights[LIFT_KEYS[liftKey]];
+  const isLight = liftKey === 'squat_light';
+  const lightWeight = isLight ? r(workWeight * 0.8) : null;
+  const baseWeight = isLight ? lightWeight : workWeight;
+
+  const warmupSets = WARMUP_PCTS.map(pct => ({
+    weight: r(baseWeight * pct), reps: 5, type: 'warmup', pct: Math.round(pct*100)
+  }));
+
+  if (isLight) {
+    // Light squat: just warmups + 1x5 at 80%
+    return [...warmupSets, { weight: lightWeight, reps: 5, type: 'work', pct: 80 }];
+  }
+
+  if (sessionType === 'heavy') {
+    // Heavy: warmups + 5, 3, 8
+    return [
+      ...warmupSets,
+      { weight: r(workWeight),        reps: 5, type: 'work',  pct: 100, label: '5 reps'  },
+      { weight: r(workWeight * 1.05), reps: 3, type: 'heavy', pct: 105, label: '3 reps'  },
+      { weight: r(workWeight * 0.90), reps: 8, type: 'back',  pct: 90,  label: '8 reps'  },
+    ];
+  }
+
+  // Normal: warmups + 1x5
+  return [...warmupSets, { weight: workWeight, reps: 5, type: 'work', pct: 100 }];
+}
+
+// ── TOAST & TIMER ─────────────────────────────────────────────────
+function showToast(msg, type='') {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast show ' + type;
+  t.textContent = msg; t.className = 'toast show ' + type;
   setTimeout(() => t.className = 'toast', 3000);
 }
 
-// ── REST TIMER ────────────────────────────────────────────────────
 function startTimer() {
   if (timerInterval) clearInterval(timerInterval);
   timerRemaining = state.restSeconds || 180;
@@ -451,10 +439,9 @@ function startTimer() {
     timerRemaining--;
     updateTimerDisplay();
     if (timerRemaining <= 0) {
-      clearInterval(timerInterval);
-      timerInterval = null;
-      document.getElementById('timer-display').textContent = 'Rest done!';
-      if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
+      clearInterval(timerInterval); timerInterval = null;
+      document.getElementById('timer-display').textContent = 'Done!';
+      if ('vibrate' in navigator) navigator.vibrate([200,100,200]);
       setTimeout(stopTimer, 3000);
     }
   }, 1000);
@@ -464,8 +451,7 @@ function stopTimer() {
   document.getElementById('rest-timer').classList.remove('visible');
 }
 function updateTimerDisplay() {
-  const m = Math.floor(timerRemaining / 60);
-  const s = timerRemaining % 60;
+  const m = Math.floor(timerRemaining/60), s = timerRemaining%60;
   document.getElementById('timer-display').textContent = `${m}:${s.toString().padStart(2,'0')}`;
 }
 
@@ -475,235 +461,220 @@ function showScreen(id, btn) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('screen-' + id).classList.add('active');
   if (btn) btn.classList.add('active');
-  if (id === 'workout')  renderWorkout();
-  if (id === 'progress') renderProgress();
-  if (id === 'history')  renderHistory();
-  if (id === 'settings') renderSettings();
-}
-
-// ── AMRAP PR CHECK ────────────────────────────────────────────────
-function isAmrapPR(liftId, week, reps) {
-  const prev = state.sessions.filter(s => s.liftId === liftId && s.week === week);
-  if (!prev.length) return false;
-  const prevBest = Math.max(...prev.map(s => {
-    const amrapSet = s.sets.find(set => set.amrap);
-    return amrapSet ? parseInt(amrapSet.reps) || 0 : 0;
-  }));
-  return parseInt(reps) > prevBest;
+  if (id==='workout')  renderWorkout();
+  if (id==='progress') renderProgress();
+  if (id==='history')  renderHistory();
+  if (id==='settings') renderSettings();
 }
 
 // ── WORKOUT ───────────────────────────────────────────────────────
-function renderWorkout() {
-  const wd = weekData();
-  const badge = document.getElementById('workout-week-badge');
-  badge.textContent = wd.label;
-  badge.className = 'week-badge' + (wd.deload ? ' deload-badge' : '');
-  document.getElementById('cycle-num').textContent = state.cycle;
-  document.getElementById('week-num').textContent = state.week;
-  document.getElementById('workout-subtitle').textContent = activeLift
-    ? LIFTS.find(l => l.id === activeLift).name : 'Select a lift to begin';
+function switchSession(s) {
+  state.currentSession = s;
+  setDone = {};
+  save();
+  renderWorkout();
+}
 
-  const grid = document.getElementById('lift-selector');
-  grid.innerHTML = LIFTS.map(l => {
-    const tm = state.tms[l.id];
-    const done = state.completedThisWeek.includes(l.id);
-    return `<button class="lift-btn ${activeLift === l.id ? 'selected' : ''}" onclick="selectLift('${l.id}')">
-      <div class="lift-icon">${l.icon}${done ? ' ✅' : ''}</div>
-      <div>${l.name}</div>
-      <div class="lift-tm">TM: ${tm ? tm + unitLabel() : 'Not set'}</div>
-    </button>`;
-  }).join('');
+function renderWorkout() {
+  const s = state.currentSession || 'A';
+  const session = SESSIONS[s];
+
+  // Badge
+  const badge = document.getElementById('session-badge');
+  badge.textContent = session.label;
+  badge.className = `session-badge badge-${s.toLowerCase()}`;
+  document.getElementById('workout-subtitle').textContent = `${session.day} — ${session.lifts.map(l => LIFT_NAMES[l]).join(', ')}`;
+  document.getElementById('week-num').textContent = state.week;
+  document.getElementById('session-num').textContent = state.totalSessions + 1;
+
+  // Session nav
+  ['A','B','C'].forEach(x => {
+    const btn = document.getElementById('nav-' + x.toLowerCase());
+    btn.className = 'session-nav-btn' + (x === s ? ` active-${x.toLowerCase()}` : '');
+  });
+
+  // Check if already logged today
+  const today = new Date().toDateString();
+  const alreadyDone = state.sessions.find(sess => sess.session === s && new Date(sess.date).toDateString() === today);
 
   const content = document.getElementById('workout-content');
-  if (!activeLift) { content.innerHTML = ''; return; }
 
-  const lift = LIFTS.find(l => l.id === activeLift);
-  const tm = state.tms[activeLift];
-
-  if (!tm) {
-    content.innerHTML = `<div class="card" style="text-align:center;padding:30px">
-      <p style="color:var(--muted);margin-bottom:16px">No training max set for ${lift.name}</p>
-      <button class="btn btn-secondary btn-sm" onclick="showScreen('settings', document.querySelectorAll('.nav-btn')[3])">Set up lifts →</button>
-    </div>`;
-    return;
-  }
-
-  if (state.completedThisWeek.includes(activeLift)) {
+  if (alreadyDone) {
     content.innerHTML = `<div class="complete-banner">
       <div class="big">✅</div>
-      <p>${lift.name} complete this week</p>
+      <p>Session ${s} logged today</p>
     </div>
-    <button class="btn btn-secondary" onclick="undoComplete('${activeLift}')">Undo — log again</button>`;
+    <button class="btn btn-secondary" onclick="undoSession('${alreadyDone.id}')">Undo — log again</button>`;
     return;
   }
 
-  const sets = wd.sets;
-  let tableRows = '';
+  // Check for stalls
+  let stallHTML = '';
+  session.lifts.forEach(liftKey => {
+    const key = LIFT_KEYS[liftKey];
+    if ((state.stalls[key] || 0) >= 2) {
+      stallHTML += `<div class="stall-banner">⚠️ ${LIFT_NAMES[liftKey]} has stalled — consider deloading 10% (${r(state.weights[key] * 0.9)}kg)</div>`;
+    }
+  });
 
-  // Warm-up sets
-  if (state.showWarmup && !wd.deload) {
-    tableRows += `<tr><td colspan="4" class="section-divider">Warm-up</td></tr>`;
-    WARMUP_SETS.forEach((s, i) => {
-      const w = calcWeight(tm, s.pct, state.rounding);
-      tableRows += `<tr class="set-row warmup-row">
-        <td>W${i+1}</td>
+  // Build lift sections
+  let html = stallHTML;
+  session.lifts.forEach((liftKey, li) => {
+    const sets = getSetsForLift(liftKey, session.type);
+    const workWeight = state.weights[LIFT_KEYS[liftKey]];
+    const displayWeight = liftKey === 'squat_light' ? r(workWeight * 0.8) : workWeight;
+
+    let rows = '';
+    if (state.showWarmup) {
+      rows += `<tr><td colspan="4" class="section-label">Warm-up</td></tr>`;
+    }
+
+    sets.forEach((set, si) => {
+      if (!state.showWarmup && set.type === 'warmup') return;
+      if (set.type !== 'warmup' && state.showWarmup) {
+        const prevType = sets[si-1]?.type;
+        if (prevType === 'warmup') rows += `<tr><td colspan="4" class="section-label">Working Sets</td></tr>`;
+      }
+
+      const key = `${li}-${si}`;
+      const checked = setDone[key] || false;
+      const rowClass = set.type === 'heavy' ? 'heavy-row' : set.type === 'back' ? 'heavy-row' : set.type === 'work' ? 'work-row' : 'warmup-row';
+      const label = set.label || `${set.reps} reps`;
+
+      rows += `<tr class="set-row ${rowClass}">
+        <td>${set.type === 'warmup' ? `W${si+1}` : (set.type==='heavy'?'H':set.type==='back'?'B':`${si-WARMUP_PCTS.length+1}`)}</td>
         <td>
-          <span class="weight-val">${w}</span><span style="font-size:11px;color:var(--muted);margin-left:2px">${unitLabel()}</span><br>
-          <span class="pct-label">${s.pct}%</span>
-          <div class="plate-display">${plateHTML(w)}</div>
+          <span class="weight-val">${set.weight}</span><span style="font-size:11px;color:var(--muted);margin-left:2px">kg</span><br>
+          <span class="pct-label">${set.pct}% · ${label}</span>
+          ${set.type !== 'warmup' ? `<div class="plate-display">${calcPlates(set.weight)}</div>` : ''}
         </td>
-        <td style="text-align:center"><span style="color:var(--muted);font-size:14px">${s.reps}</span></td>
-        <td style="text-align:right"><div class="set-check ${setDone['w'+i] ? 'done' : ''}" onclick="toggleSet('w${i}', 0)"></div></td>
+        <td style="text-align:center;color:var(--muted);font-size:13px">${set.reps}</td>
+        <td><div class="set-check ${checked?'done':''}" onclick="toggleSet('${key}')"></div></td>
       </tr>`;
     });
-    tableRows += `<tr><td colspan="4" class="section-divider">Working Sets</td></tr>`;
-  }
 
-  // Working sets
-  sets.forEach((s, i) => {
-    const w = calcWeight(tm, s.pct, state.rounding);
-    const isAmrap = !!s.amrap;
-    const checked = setDone[i] || false;
-    tableRows += `<tr class="set-row ${isAmrap ? 'amrap-row' : ''}">
-      <td>${i + 1}</td>
-      <td>
-        <span class="weight-val">${w}</span><span style="font-size:12px;color:var(--muted);margin-left:2px">${unitLabel()}</span><br>
-        <span class="pct-label">${s.pct}%${isAmrap ? ' AMRAP' : ''}</span>
-        <div class="plate-display">${plateHTML(w)}</div>
-      </td>
-      <td style="text-align:center">
-        ${isAmrap
-          ? `<input class="reps-input" type="number" id="amrap-${i}" min="0" max="99" inputmode="numeric" placeholder="reps" value="${amrapReps[i] || ''}">`
-          : `<span style="color:var(--muted);font-size:14px">${s.reps}</span>`}
-      </td>
-      <td style="text-align:right">
-        <div class="set-check ${checked ? 'done' : ''}" onclick="toggleSet(${i}, ${sets.length})"></div>
-      </td>
-    </tr>`;
+    html += `<div class="lift-section">
+      <div class="lift-title">
+        <span class="lift-name">${LIFT_NAMES[liftKey]}</span>
+        <span class="lift-workweight">${displayWeight}kg work set</span>
+      </div>
+      <div class="card" style="padding:12px 14px">
+        <table class="sets-table">
+          <thead><tr><th>#</th><th>Weight / Plates</th><th style="text-align:center">Reps</th><th style="text-align:right">✓</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
   });
 
-  content.innerHTML = `<div class="card">
-    <table class="sets-table">
-      <thead><tr><th>#</th><th>Weight / Plates</th><th style="text-align:center">Reps</th><th style="text-align:right">Done</th></tr></thead>
-      <tbody>${tableRows}</tbody>
-    </table>
-  </div>
-  <button class="btn btn-primary" onclick="finishLift('${activeLift}')">Log ${lift.name} session</button>`;
+  html += `<button class="btn btn-primary" onclick="logSession('${s}')">Log Session ${s}</button>`;
+  content.innerHTML = html;
 }
 
-function selectLift(id) {
-  activeLift = id;
-  setDone = {};
-  amrapReps = {};
+function toggleSet(key) {
+  setDone[key] = !setDone[key];
+  if (setDone[key]) startTimer();
   renderWorkout();
 }
 
-function toggleSet(idx, total) {
-  captureAmrap();
-  setDone[idx] = !setDone[idx];
-  if (setDone[idx]) startTimer();
-  renderWorkout();
-}
+function logSession(sessionKey) {
+  const session = SESSIONS[sessionKey];
+  const loggedLifts = {};
 
-function captureAmrap() {
-  weekData().sets.forEach((s, i) => {
-    if (s.amrap) { const el = document.getElementById('amrap-' + i); if (el) amrapReps[i] = el.value; }
+  session.lifts.forEach(liftKey => {
+    const key = LIFT_KEYS[liftKey];
+    const isLight = liftKey === 'squat_light';
+    loggedLifts[liftKey] = {
+      name: LIFT_NAMES[liftKey],
+      weight: isLight ? r(state.weights[key] * 0.8) : state.weights[key]
+    };
   });
-}
 
-function finishLift(liftId) {
-  captureAmrap();
-  const wd = weekData();
-
-  const setsLogged = wd.sets.map((s, i) => ({
-    pct: s.pct,
-    weight: calcWeight(state.tms[liftId], s.pct, state.rounding),
-    reps: s.amrap ? (amrapReps[i] || '?') : s.reps,
-    amrap: !!s.amrap,
-  }));
-
-  // Check AMRAP PR
-  const amrapSet = setsLogged.find(s => s.amrap);
-  let isPR = false;
-  if (amrapSet && amrapSet.reps !== '?') {
-    isPR = isAmrapPR(liftId, state.week, amrapSet.reps);
-  }
-
-  const session = {
+  const sessionLog = {
     id: Date.now(),
-    liftId,
-    liftName: LIFTS.find(l => l.id === liftId).name,
-    cycle: state.cycle,
+    session: sessionKey,
     week: state.week,
     date: new Date().toISOString(),
-    sets: setsLogged,
-    isPR,
+    lifts: loggedLifts,
+    weights: { ...state.weights }
   };
 
-  state.sessions.unshift(session);
-  if (!state.completedThisWeek.includes(liftId)) state.completedThisWeek.push(liftId);
+  state.sessions.unshift(sessionLog);
+  state.totalSessions++;
 
-  if (state.completedThisWeek.length >= 4) advanceWeek();
-
-  setDone = {}; amrapReps = {}; activeLift = null;
-  save();
-
-  if (isPR) showToast('🏆 New AMRAP PR!', 'success');
-  else showToast('Session logged ✓', 'success');
-
-  // Sync to Google Sheets
-  if (state.google.connected && state.google.spreadsheetId) {
-    appendSessionToSheet(session);
+  // Advance week and increment weights after every C session
+  if (sessionKey === 'C') {
+    state.week++;
+    // Increment all working weights by 2.5kg
+    Object.keys(state.weights).forEach(k => {
+      state.weights[k] = +(state.weights[k] + 2.5).toFixed(2);
+    });
+    showToast('Week complete! +2.5kg added to all lifts 💪', 'success');
+  } else {
+    showToast(`Session ${sessionKey} logged ✓`, 'success');
   }
 
+  // Auto-advance to next session
+  state.currentSession = sessionKey === 'A' ? 'B' : sessionKey === 'B' ? 'C' : 'A';
+  setDone = {};
+  save();
   stopTimer();
+
+  if (state.google.connected && state.google.spreadsheetId) appendSessionToSheet(sessionLog);
   renderWorkout();
 }
 
-function undoComplete(liftId) {
-  state.completedThisWeek = state.completedThisWeek.filter(l => l !== liftId);
-  state.sessions = state.sessions.filter(s => !(s.liftId === liftId && s.week === state.week && s.cycle === state.cycle));
-  save();
-  selectLift(liftId);
-}
+function undoSession(id) {
+  const idx = state.sessions.findIndex(s => s.id === id);
+  if (idx === -1) return;
+  const sess = state.sessions[idx];
 
-function advanceWeek() {
-  state.completedThisWeek = [];
-  if (state.week < 4) {
-    state.week++;
-  } else {
-    state.week = 1;
-    state.cycle++;
-    const upper = state.useLbs ? 5 : 2.5;
-    const lower = state.useLbs ? 10 : 5;
-    state.tms.squat    = +(state.tms.squat    + lower).toFixed(2);
-    state.tms.deadlift = +(state.tms.deadlift + lower).toFixed(2);
-    state.tms.bench    = +(state.tms.bench    + upper).toFixed(2);
-    state.tms.ohp      = +(state.tms.ohp      + upper).toFixed(2);
-    showToast('🎉 New cycle! TMs increased.', 'success');
+  // Reverse weight increment if it was a C session
+  if (sess.session === 'C') {
+    state.week = Math.max(1, state.week - 1);
+    Object.keys(state.weights).forEach(k => {
+      state.weights[k] = +(state.weights[k] - 2.5).toFixed(2);
+    });
   }
+
+  state.sessions.splice(idx, 1);
+  state.totalSessions = Math.max(0, state.totalSessions - 1);
+  state.currentSession = sess.session;
+  save();
+  renderWorkout();
 }
 
-// ── PROGRESS / CHARTS ─────────────────────────────────────────────
-function setChartLift(id, btn) {
-  chartLift = id;
+// ── PROGRESS ──────────────────────────────────────────────────────
+function setChartLift(lift, btn) {
+  chartLift = lift;
   document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
   if (btn) btn.classList.add('active');
   renderProgress();
 }
 
 function renderProgress() {
-  const sessions = state.sessions.filter(s => s.liftId === chartLift).slice().reverse();
+  // Build chart data from session history
+  const relevantSessions = state.sessions.slice().reverse().filter(s => {
+    return Object.values(s.lifts).some(l => LIFT_KEYS[Object.keys(s.lifts).find(k => LIFT_KEYS[k] === chartLift)] === chartLift
+      || s.weights[chartLift]);
+  });
 
-  drawChart('chart-amrap', sessions.map((s, i) => {
-    const a = s.sets.find(x => x.amrap);
-    return { label: `C${s.cycle}W${s.week}`, value: a ? (parseInt(a.reps) || 0) : 0, pr: s.isPR };
-  }), 'AMRAP Reps', '#e8ff47');
+  const data = state.sessions.slice().reverse().map(s => ({
+    label: `W${s.week}${s.session}`,
+    value: s.weights[chartLift] || 0
+  })).filter(d => d.value > 0);
 
-  drawChart('chart-volume', sessions.map(s => {
-    const vol = s.sets.reduce((acc, set) => acc + (set.weight * (parseInt(set.reps) || 0)), 0);
-    return { label: `C${s.cycle}W${s.week}`, value: vol };
-  }), 'Tonnage', '#47e8a0');
+  drawChart('chart-main', data, chartLift.charAt(0).toUpperCase() + chartLift.slice(1), '#e8ff47');
+
+  // Current weights display
+  const keys = ['squat','bench','row','ohp','deadlift'];
+  const names = { squat:'Squat', bench:'Bench Press', row:'Barbell Row', ohp:'OHP', deadlift:'Deadlift' };
+  document.getElementById('current-weights-display').innerHTML = keys.map(k =>
+    `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px">
+      <span style="color:var(--muted)">${names[k]}</span>
+      <span style="font-weight:600">${state.weights[k]}kg</span>
+    </div>`
+  ).join('');
 }
 
 function drawChart(canvasId, data, label, color) {
@@ -711,81 +682,59 @@ function drawChart(canvasId, data, label, color) {
   if (!canvas) return;
   const dpr = window.devicePixelRatio || 1;
   const W = canvas.parentElement.clientWidth || 300;
-  canvas.width = W * dpr;
-  canvas.height = 160 * dpr;
-  canvas.style.width = W + 'px';
-  canvas.style.height = '160px';
+  canvas.width = W * dpr; canvas.height = 160 * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = '160px';
   const ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, W, 160);
 
   if (!data.length || data.every(d => d.value === 0)) {
-    ctx.fillStyle = '#555';
-    ctx.font = '13px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('No data yet', W / 2, 85);
-    return;
+    ctx.fillStyle = '#555'; ctx.font = '13px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('No data yet', W/2, 85); return;
   }
 
-  const pad = { top: 16, right: 12, bottom: 30, left: 40 };
-  const cW = W - pad.left - pad.right;
-  const cH = 160 - pad.top - pad.bottom;
+  const pad = { top:16, right:12, bottom:30, left:44 };
+  const cW = W - pad.left - pad.right, cH = 160 - pad.top - pad.bottom;
   const vals = data.map(d => d.value);
-  const maxV = Math.max(...vals) * 1.15 || 1;
-  const minV = 0;
+  const maxV = Math.max(...vals) * 1.1, minV = Math.min(...vals) * 0.9;
+  const range = maxV - minV || 1;
+  const xStep = data.length > 1 ? cW / (data.length-1) : cW/2;
 
-  const xStep = data.length > 1 ? cW / (data.length - 1) : cW / 2;
-
-  // Grid lines
-  ctx.strokeStyle = '#2e2e2e';
-  ctx.lineWidth = 1;
-  [0, 0.25, 0.5, 0.75, 1].forEach(t => {
-    const y = pad.top + cH - t * cH;
-    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + cW, y); ctx.stroke();
+  [0,0.25,0.5,0.75,1].forEach(t => {
+    const y = pad.top + cH - t*cH;
+    ctx.strokeStyle = '#2e2e2e'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left+cW, y); ctx.stroke();
     if (t > 0) {
       ctx.fillStyle = '#666'; ctx.font = '10px sans-serif'; ctx.textAlign = 'right';
-      ctx.fillText(Math.round(minV + t * (maxV - minV)), pad.left - 4, y + 3);
+      ctx.fillText(Math.round(minV + t*range), pad.left-4, y+3);
     }
   });
 
-  // Line
-  ctx.beginPath();
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 2;
-  ctx.lineJoin = 'round';
-  data.forEach((d, i) => {
-    const x = pad.left + (data.length > 1 ? i * xStep : cW / 2);
-    const y = pad.top + cH - ((d.value - minV) / (maxV - minV)) * cH;
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+  data.forEach((d,i) => {
+    const x = pad.left + (data.length>1 ? i*xStep : cW/2);
+    const y = pad.top + cH - ((d.value-minV)/range)*cH;
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
   });
   ctx.stroke();
 
-  // Fill
   ctx.beginPath();
-  data.forEach((d, i) => {
-    const x = pad.left + (data.length > 1 ? i * xStep : cW / 2);
-    const y = pad.top + cH - ((d.value - minV) / (maxV - minV)) * cH;
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  data.forEach((d,i) => {
+    const x = pad.left + (data.length>1 ? i*xStep : cW/2);
+    const y = pad.top + cH - ((d.value-minV)/range)*cH;
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
   });
-  ctx.lineTo(pad.left + (data.length > 1 ? (data.length-1)*xStep : cW/2), pad.top + cH);
-  ctx.lineTo(pad.left, pad.top + cH);
-  ctx.closePath();
-  ctx.fillStyle = color + '22';
-  ctx.fill();
+  ctx.lineTo(pad.left+(data.length>1?(data.length-1)*xStep:cW/2), pad.top+cH);
+  ctx.lineTo(pad.left, pad.top+cH); ctx.closePath();
+  ctx.fillStyle = color+'22'; ctx.fill();
 
-  // Dots + labels
-  data.forEach((d, i) => {
-    const x = pad.left + (data.length > 1 ? i * xStep : cW / 2);
-    const y = pad.top + cH - ((d.value - minV) / (maxV - minV)) * cH;
-    ctx.beginPath();
-    ctx.arc(x, y, d.pr ? 6 : 3, 0, Math.PI * 2);
-    ctx.fillStyle = d.pr ? '#47e8a0' : color;
-    ctx.fill();
-
-    // x labels (every other if crowded)
-    if (data.length <= 12 || i % 2 === 0) {
-      ctx.fillStyle = '#666'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText(d.label, x, 160 - pad.bottom + 12);
+  data.forEach((d,i) => {
+    const x = pad.left + (data.length>1 ? i*xStep : cW/2);
+    const y = pad.top + cH - ((d.value-minV)/range)*cH;
+    ctx.beginPath(); ctx.arc(x,y,3,0,Math.PI*2); ctx.fillStyle = color; ctx.fill();
+    if (data.length<=12 || i%2===0) {
+      ctx.fillStyle='#666'; ctx.font='9px sans-serif'; ctx.textAlign='center';
+      ctx.fillText(d.label, x, 160-pad.bottom+12);
     }
   });
 }
@@ -796,68 +745,60 @@ function renderHistory() {
   if (!state.sessions.length) {
     list.innerHTML = `<div class="empty-state">
       <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-      <p>No sessions logged yet</p>
-      <p style="font-size:13px;margin-top:6px">Complete a workout to see your history</p>
-    </div>`;
+      <p>No sessions logged yet</p></div>`;
     return;
   }
   list.innerHTML = state.sessions.map(s => {
     const d = new Date(s.date);
-    const dateStr = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
-    const setsHtml = s.sets.map(set => {
-      let cls = set.amrap ? 'amrap-set' : '';
-      if (set.amrap && s.isPR) cls = 'pr-set';
-      return `<span class="history-set ${cls}">${set.weight}${unitLabel()} × ${set.reps}${set.amrap && s.isPR ? ' 🏆' : set.amrap ? ' 🔥' : ''}</span>`;
-    }).join('');
+    const dateStr = d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' });
+    const liftRows = Object.values(s.lifts).map(l =>
+      `<div class="history-lift-row"><span class="history-lift-name">${l.name}</span><span class="history-lift-weight">${l.weight}kg</span></div>`
+    ).join('');
+    const badgeClass = `badge-${s.session.toLowerCase()}`;
     return `<div class="history-item">
       <div class="history-meta">
         <div>
-          <div class="history-lift">${s.liftName}${s.isPR ? ' <span style="font-size:11px;color:var(--success)">PR</span>' : ''}</div>
-          <div class="history-date" style="margin-top:2px">Cycle ${s.cycle} · Week ${s.week}</div>
+          <span class="session-badge ${badgeClass}" style="margin-bottom:6px;display:inline-block">Session ${s.session}</span>
+          <div class="history-session">Week ${s.week}</div>
         </div>
         <div class="history-date">${dateStr}</div>
       </div>
-      <div class="history-sets">${setsHtml}</div>
+      <div class="history-lifts">${liftRows}</div>
     </div>`;
   }).join('');
 }
 
 // ── SETTINGS ─────────────────────────────────────────────────────
 function renderSettings() {
-  // TM adjust rows
-  const tmRows = document.getElementById('tm-adjust-rows');
-  const step = state.useLbs ? 5 : 2.5;
-  tmRows.innerHTML = LIFTS.map(l => {
-    const val = state.tms[l.id] || 0;
-    return `<div class="tm-adjust-row">
-      <span style="font-size:14px;font-weight:500;width:100px;flex-shrink:0">${l.name}</span>
-      <button class="tm-adj-btn" onclick="adjustTM('${l.id}', -${step})">−</button>
-      <div class="tm-val-display" id="tmv-${l.id}">${val}<span style="font-size:13px;color:var(--muted);margin-left:2px">${unitLabel()}</span></div>
-      <button class="tm-adj-btn" onclick="adjustTM('${l.id}', ${step})">+</button>
-    </div>`;
-  }).join('');
+  const keys = ['squat','bench','row','ohp','deadlift'];
+  const names = { squat:'Squat', bench:'Bench Press', row:'Barbell Row', ohp:'OHP', deadlift:'Deadlift' };
+  document.getElementById('weight-adjust-rows').innerHTML = keys.map(k => `
+    <div class="tm-adjust-row">
+      <span style="font-size:13px;font-weight:500;width:90px;flex-shrink:0">${names[k]}</span>
+      <button class="tm-adj-btn" onclick="adjustWeight('${k}',-2.5)">−</button>
+      <div class="tm-val-display" id="wv-${k}">${state.weights[k]}<span style="font-size:12px;color:var(--muted);margin-left:2px">kg</span></div>
+      <button class="tm-adj-btn" onclick="adjustWeight('${k}',2.5)">+</button>
+    </div>`).join('');
 
-  document.getElementById('bar-weight').value  = state.barWeight || 20;
-  document.getElementById('use-lbs').checked   = state.useLbs;
+  document.getElementById('bar-weight').value = state.barWeight || 20;
   document.getElementById('show-warmup').checked = state.showWarmup !== false;
-  document.querySelectorAll('input[name="rounding"]').forEach(r => { r.checked = parseFloat(r.value) === state.rounding; });
-  document.querySelectorAll('input[name="rest"]').forEach(r => { r.checked = parseInt(r.value) === (state.restSeconds || 180); });
+  document.querySelectorAll('input[name="rounding"]').forEach(r => { r.checked = parseFloat(r.value) === (state.rounding||2.5); });
+  document.querySelectorAll('input[name="rest"]').forEach(r => { r.checked = parseInt(r.value) === (state.restSeconds||180); });
   updateSheetsUI();
 }
 
-function adjustTM(liftId, delta) {
-  state.tms[liftId] = Math.max(0, +((state.tms[liftId] || 0) + delta).toFixed(2));
-  const el = document.getElementById('tmv-' + liftId);
-  if (el) el.innerHTML = `${state.tms[liftId]}<span style="font-size:13px;color:var(--muted);margin-left:2px">${unitLabel()}</span>`;
+function adjustWeight(key, delta) {
+  state.weights[key] = Math.max(0, +((state.weights[key]||0) + delta).toFixed(2));
+  const el = document.getElementById('wv-' + key);
+  if (el) el.innerHTML = `${state.weights[key]}<span style="font-size:12px;color:var(--muted);margin-left:2px">kg</span>`;
   save();
 }
 
 function saveSettings() {
-  state.useLbs     = document.getElementById('use-lbs').checked;
-  state.showWarmup = document.getElementById('show-warmup').checked;
   state.barWeight  = parseFloat(document.getElementById('bar-weight').value) || 20;
+  state.showWarmup = document.getElementById('show-warmup').checked;
   const rEl = document.querySelector('input[name="rounding"]:checked');
-  state.rounding = rEl ? parseFloat(rEl.value) : 5;
+  state.rounding = rEl ? parseFloat(rEl.value) : 2.5;
   const restEl = document.querySelector('input[name="rest"]:checked');
   state.restSeconds = restEl ? parseInt(restEl.value) : 180;
   save();
@@ -867,9 +808,8 @@ function saveSettings() {
 
 function resetApp() {
   if (confirm('Reset all data? This cannot be undone.')) {
-    localStorage.removeItem('531_state');
-    state = defaultState();
-    activeLift = null; setDone = {}; amrapReps = {};
+    localStorage.removeItem('madcow_state');
+    state = defaultState(); setDone = {};
     showScreen('workout', document.querySelectorAll('.nav-btn')[0]);
   }
 }
@@ -880,39 +820,29 @@ function updateSheetsUI() {
   const statusEl = document.getElementById('sheets-status');
   const btnEl = document.getElementById('sheets-btn');
   const infoEl = document.getElementById('sheets-info');
-  const linkEl = document.getElementById('sheets-link');
-
   if (g.connected) {
     statusEl.innerHTML = '<span class="status-dot dot-green"></span>Connected';
-    btnEl.textContent = 'Disconnect';
-    btnEl.onclick = disconnectSheets;
+    btnEl.textContent = 'Disconnect'; btnEl.onclick = disconnectSheets;
     infoEl.style.display = 'block';
-    if (g.spreadsheetUrl) linkEl.href = g.spreadsheetUrl;
+    if (g.spreadsheetUrl) document.getElementById('sheets-link').href = g.spreadsheetUrl;
   } else {
     statusEl.innerHTML = '<span class="status-dot dot-grey"></span>Not connected';
-    btnEl.textContent = 'Connect';
-    btnEl.onclick = handleSheetsConnect;
+    btnEl.textContent = 'Connect'; btnEl.onclick = handleSheetsConnect;
     infoEl.style.display = 'none';
   }
 }
 
 function handleSheetsConnect() {
-  if (!window.google || !window.google.accounts) {
-    showToast('Google API not loaded yet, try again', 'error');
-    return;
-  }
+  if (!window.google?.accounts) { showToast('Google API not ready', 'error'); return; }
   if (!googleTokenClient) {
     googleTokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: GOOGLE_CLIENT_ID,
-      scope: SCOPES,
+      client_id: GOOGLE_CLIENT_ID, scope: SCOPES,
       callback: async (resp) => {
-        if (resp.error) { showToast('Google auth failed: ' + resp.error, 'error'); return; }
+        if (resp.error) { showToast('Auth failed: ' + resp.error, 'error'); return; }
         state.google.token = resp.access_token;
-        state.google.connected = true;
-        save();
-        showToast('Connected to Google!', 'success');
-        await ensureSpreadsheet();
-        updateSheetsUI();
+        state.google.connected = true; save();
+        showToast('Connected!', 'success');
+        await ensureSpreadsheet(); updateSheetsUI();
       }
     });
   }
@@ -920,75 +850,49 @@ function handleSheetsConnect() {
 }
 
 function disconnectSheets() {
-  if (!confirm('Disconnect Google Sheets? Your spreadsheet data will remain.')) return;
-  if (state.google.token && window.google?.accounts?.oauth2) {
-    google.accounts.oauth2.revoke(state.google.token);
-  }
-  state.google = { connected: false, token: null, spreadsheetId: null, spreadsheetUrl: null };
-  save();
-  updateSheetsUI();
-  showToast('Disconnected from Google Sheets', '');
+  if (!confirm('Disconnect Google Sheets?')) return;
+  if (state.google.token && window.google?.accounts?.oauth2) google.accounts.oauth2.revoke(state.google.token);
+  state.google = { connected:false, token:null, spreadsheetId:null, spreadsheetUrl:null };
+  save(); updateSheetsUI();
 }
 
-async function sheetsRequest(url, method = 'GET', body = null) {
-  const opts = {
-    method,
-    headers: { 'Authorization': 'Bearer ' + state.google.token, 'Content-Type': 'application/json' }
-  };
+async function sheetsRequest(url, method='GET', body=null) {
+  const opts = { method, headers: { 'Authorization':'Bearer '+state.google.token, 'Content-Type':'application/json' } };
   if (body) opts.body = JSON.stringify(body);
   const res = await fetch(url, opts);
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(err);
-  }
+  if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
 
 async function ensureSpreadsheet() {
   try {
     if (state.google.spreadsheetId) {
-      // Verify it still exists
-      try {
-        await sheetsRequest(`https://sheets.googleapis.com/v4/spreadsheets/${state.google.spreadsheetId}?fields=spreadsheetId`);
-        return; // exists
-      } catch { state.google.spreadsheetId = null; }
+      try { await sheetsRequest(`https://sheets.googleapis.com/v4/spreadsheets/${state.google.spreadsheetId}?fields=spreadsheetId`); return; }
+      catch { state.google.spreadsheetId = null; }
     }
-
-    // Create new spreadsheet
-    const headers = [['Date','Lift','Cycle','Week','Set','Weight','Reps','AMRAP?','Is PR?']];
+    const headers = [['Date','Week','Session','Lift','Work Weight (kg)']];
     const ss = await sheetsRequest('https://sheets.googleapis.com/v4/spreadsheets', 'POST', {
-      properties: { title: '5/3/1 Tracker' },
-      sheets: [{ properties: { title: 'Sessions' }, data: [{ startRow: 0, startColumn: 0,
-        rowData: [{ values: headers[0].map(v => ({ userEnteredValue: { stringValue: v }, userEnteredFormat: { textFormat: { bold: true } } })) }]
+      properties: { title: 'Madcow Tracker' },
+      sheets: [{ properties: { title: 'Sessions' }, data: [{ startRow:0, startColumn:0,
+        rowData: [{ values: headers[0].map(v => ({ userEnteredValue:{stringValue:v}, userEnteredFormat:{textFormat:{bold:true}} })) }]
       }]}]
     });
-
     state.google.spreadsheetId = ss.spreadsheetId;
     state.google.spreadsheetUrl = ss.spreadsheetUrl;
-    save();
-    showToast('Spreadsheet created in your Drive', 'success');
-  } catch (e) {
-    console.error('Spreadsheet error:', e);
-    showToast('Could not create spreadsheet', 'error');
-  }
+    save(); showToast('Spreadsheet created in Drive', 'success');
+  } catch(e) { console.error(e); showToast('Could not create spreadsheet', 'error'); }
 }
 
 async function appendSessionToSheet(session) {
   try {
     if (!state.google.token || !state.google.spreadsheetId) return;
     const date = new Date(session.date).toLocaleDateString('en-GB');
-    const rows = session.sets.map((s, i) => [
-      date, session.liftName, session.cycle, session.week,
-      i + 1, s.weight, s.reps, s.amrap ? 'Yes' : 'No', session.isPR ? 'Yes' : 'No'
-    ]);
+    const rows = Object.values(session.lifts).map(l => [date, session.week, session.session, l.name, l.weight]);
     await sheetsRequest(
-      `https://sheets.googleapis.com/v4/spreadsheets/${state.google.spreadsheetId}/values/Sessions!A:I:append?valueInputOption=USER_ENTERED`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${state.google.spreadsheetId}/values/Sessions!A:E:append?valueInputOption=USER_ENTERED`,
       'POST', { values: rows }
     );
-  } catch (e) {
-    console.error('Sheet append error:', e);
-    showToast('Sheet sync failed', 'error');
-  }
+  } catch(e) { console.error(e); showToast('Sheet sync failed', 'error'); }
 }
 
 // ── INIT ─────────────────────────────────────────────────────────
