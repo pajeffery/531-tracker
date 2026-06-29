@@ -358,11 +358,7 @@
     <div class="modal-title">Session Complete!</div>
     <div class="modal-subtitle" id="summary-subtitle"></div>
     <div class="stat-grid" id="summary-stats"></div>
-    <p style="font-size:14px;color:var(--muted);margin-bottom:12px">Did you hit all your rep targets?</p>
-    <div style="display:flex;gap:10px">
-      <button class="btn btn-primary" style="flex:1" onclick="closeSummary(false)">✅ Yes, all good</button>
-      <button class="btn btn-secondary" style="flex:1" onclick="closeSummary(true)">⚠️ Missed some</button>
-    </div>
+    <button class="btn btn-primary" onclick="closeSummary()">Done</button>
   </div>
 </div>
 
@@ -730,22 +726,28 @@ function showSummary(sessionKey) {
   document.getElementById('summary-modal').classList.add('visible');
 }
 
-function closeSummary(missedAny) {
+function closeSummary() {
   document.getElementById('summary-modal').classList.remove('visible');
   const btn = document.getElementById('finish-workout-btn');
   if (btn) btn.remove();
   workoutStartTime = null;
   const s = state.currentSession || 'A';
-
-  // Update missed reps tracking based on user feedback
   const session = SESSIONS[s];
-  session.lifts.forEach(liftKey => {
+
+  // Auto-detect missed reps: check if any working sets were left unticked
+  session.lifts.forEach((liftKey, li) => {
     const key = LIFT_KEYS[liftKey];
-    if (missedAny) {
+    const sets = getSetsForLift(liftKey, session.type);
+    let missedWorkingSet = false;
+    sets.forEach((set, si) => {
+      if (set.type === 'warmup') return; // ignore warmups
+      const doneKey = `${li}-${si}`;
+      if (!setDone[doneKey]) missedWorkingSet = true;
+    });
+    if (missedWorkingSet) {
       state.missedReps[key] = (state.missedReps[key] || 0) + 1;
       state.stalls[key] = (state.stalls[key] || 0) + 1;
     } else {
-      // Reset on successful session
       state.missedReps[key] = 0;
       state.stalls[key] = 0;
     }
