@@ -131,12 +131,31 @@
   .stall-banner { background: rgba(255,79,79,0.1); border: 1px solid rgba(255,79,79,0.3); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 12px; font-size: 13px; color: var(--danger); }
 
   .chart-wrap { overflow-x: auto; }
+  .cal-day { aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;font-size:13px;position:relative; }
+  .cal-day.has-session { background:rgba(232,255,71,0.12);color:var(--accent);font-weight:600; }
+  .cal-day.has-session-a { background:rgba(79,142,255,0.15);color:#4f8eff;font-weight:600; }
+  .cal-day.has-session-b { background:rgba(142,68,173,0.15);color:#8e44ad;font-weight:600; }
+  .cal-day.has-session-c { background:rgba(232,255,71,0.15);color:var(--accent);font-weight:600; }
+  .cal-day.today { outline:2px solid var(--accent); }
+  .cal-day.empty { opacity:0; pointer-events:none; }
+  .cal-dot { width:5px;height:5px;border-radius:50%;background:currentColor;margin-top:2px; }
   canvas { display: block; }
   .chart-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
   .chart-tab { flex: 1; padding: 7px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 11px; font-weight: 500; cursor: pointer; font-family: var(--font); text-align: center; transition: all 0.15s; }
   .chart-tab.active { background: var(--accent); border-color: var(--accent); color: #111; font-weight: 700; }
 
   ::-webkit-scrollbar { width: 0; }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 400; display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .modal-overlay.visible { opacity: 1; pointer-events: all; }
+  .modal { background: var(--surface); border-radius: 20px 20px 0 0; padding: 24px 20px 40px; width: 100%; max-width: 480px; transform: translateY(100%); transition: transform 0.3s ease; }
+  .modal-overlay.visible .modal { transform: translateY(0); }
+  .modal-title { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .modal-subtitle { font-size: 14px; color: var(--muted); margin-bottom: 24px; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+  .stat-card { background: var(--surface2); border-radius: var(--radius); padding: 14px; }
+  .stat-val { font-size: 24px; font-weight: 700; color: var(--accent); }
+  .stat-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -199,6 +218,23 @@
     <h1>History</h1>
     <p class="subtitle">Logged sessions</p>
   </div>
+  <div class="card" style="margin-bottom:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <button onclick="changeMonth(-1)" style="background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;padding:4px 8px">‹</button>
+      <div id="cal-month-label" style="font-size:16px;font-weight:600"></div>
+      <button onclick="changeMonth(1)" style="background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;padding:4px 8px">›</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:6px">
+      <div style="text-align:center;font-size:11px;color:var(--muted);padding:4px">M</div>
+      <div style="text-align:center;font-size:11px;color:var(--muted);padding:4px">T</div>
+      <div style="text-align:center;font-size:11px;color:var(--muted);padding:4px">W</div>
+      <div style="text-align:center;font-size:11px;color:var(--muted);padding:4px">T</div>
+      <div style="text-align:center;font-size:11px;color:var(--muted);padding:4px">F</div>
+      <div style="text-align:center;font-size:11px;color:var(--muted);padding:4px">S</div>
+      <div style="text-align:center;font-size:11px;color:var(--muted);padding:4px">S</div>
+    </div>
+    <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px"></div>
+  </div>
   <div id="history-list"></div>
 </div>
 
@@ -233,10 +269,10 @@
         <p style="font-size:13px;color:var(--muted);margin-bottom:8px">Round weights to nearest:</p>
         <div style="display:flex;gap:8px">
           <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;cursor:pointer;font-size:14px">
-            <input type="radio" name="rounding" value="2.5" style="accent-color:var(--accent)"> 2.5kg
+            <input type="radio" name="rounding" value="1.25" style="accent-color:var(--accent)"> 1.25kg
           </label>
           <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;cursor:pointer;font-size:14px">
-            <input type="radio" name="rounding" value="5" checked style="accent-color:var(--accent)"> 5kg
+            <input type="radio" name="rounding" value="2.5" checked style="accent-color:var(--accent)"> 2.5kg
           </label>
         </div>
       </div>
@@ -299,6 +335,16 @@
     Settings
   </button>
 </nav>
+
+<div class="modal-overlay" id="summary-modal">
+  <div class="modal">
+    <div style="font-size:36px;margin-bottom:8px">🏋️</div>
+    <div class="modal-title">Session Complete!</div>
+    <div class="modal-subtitle" id="summary-subtitle"></div>
+    <div class="stat-grid" id="summary-stats"></div>
+    <button class="btn btn-primary" onclick="closeSummary()">Done</button>
+  </div>
+</div>
 
 <script src="https://accounts.google.com/gsi/client" async></script>
 <script>
@@ -369,6 +415,8 @@ function save() { localStorage.setItem('madcow_state', JSON.stringify(state)); }
 
 let state = loadState();
 let setDone = {};
+let workoutStartTime = null;
+let finishBtnAdded = false;
 let timerInterval = null;
 let timerRemaining = 0;
 let chartLift = 'squat';
@@ -573,8 +621,77 @@ function renderWorkout() {
 
 function toggleSet(key) {
   setDone[key] = !setDone[key];
-  if (setDone[key]) startTimer();
+  if (setDone[key]) {
+    if (!workoutStartTime) workoutStartTime = Date.now();
+    startTimer();
+  }
+  checkAllSetsDone();
   renderWorkout();
+}
+
+function checkAllSetsDone() {
+  const s = state.currentSession || 'A';
+  const session = SESSIONS[s];
+  if (state.completedThisWeek && state.completedThisWeek.includes(s)) return;
+  // Count total checkable sets
+  let total = 0;
+  session.lifts.forEach((liftKey, li) => {
+    const sets = getSetsForLift(liftKey, session.type);
+    sets.forEach((set, si) => { if (state.showWarmup || set.type !== 'warmup') total++; });
+  });
+  const done = Object.values(setDone).filter(Boolean).length;
+  if (done >= total && total > 0) {
+    setTimeout(showFinishButton, 300);
+  }
+}
+
+function showFinishButton() {
+  const existing = document.getElementById('finish-workout-btn');
+  if (existing) return;
+  const btn = document.createElement('button');
+  btn.id = 'finish-workout-btn';
+  btn.className = 'btn btn-primary';
+  btn.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:448px;z-index:150;box-shadow:0 4px 20px rgba(232,255,71,0.3)';
+  btn.textContent = '🏁 Finish Workout';
+  btn.onclick = () => {
+    const s = state.currentSession || 'A';
+    showSummary(s);
+  };
+  document.body.appendChild(btn);
+}
+
+function showSummary(sessionKey) {
+  const session = SESSIONS[sessionKey];
+  const duration = workoutStartTime ? Math.round((Date.now() - workoutStartTime) / 60000) : null;
+
+  // Calculate total volume
+  let totalReps = 0, totalVolume = 0;
+  session.lifts.forEach(liftKey => {
+    const sets = getSetsForLift(liftKey, session.type);
+    sets.forEach(set => {
+      if (!state.showWarmup && set.type === 'warmup') return;
+      totalReps += set.reps;
+      totalVolume += set.weight * set.reps;
+    });
+  });
+
+  document.getElementById('summary-subtitle').textContent = `${session.label} · Week ${state.week}`;
+  document.getElementById('summary-stats').innerHTML = `
+    <div class="stat-card"><div class="stat-val">${duration ? duration + 'm' : '--'}</div><div class="stat-label">Duration</div></div>
+    <div class="stat-card"><div class="stat-val">${session.lifts.length}</div><div class="stat-label">Lifts</div></div>
+    <div class="stat-card"><div class="stat-val">${totalReps}</div><div class="stat-label">Total Reps</div></div>
+    <div class="stat-card"><div class="stat-val">${Math.round(totalVolume).toLocaleString()}kg</div><div class="stat-label">Total Volume</div></div>
+  `;
+  document.getElementById('summary-modal').classList.add('visible');
+}
+
+function closeSummary() {
+  document.getElementById('summary-modal').classList.remove('visible');
+  const btn = document.getElementById('finish-workout-btn');
+  if (btn) btn.remove();
+  workoutStartTime = null;
+  const s = state.currentSession || 'A';
+  logSession(s);
 }
 
 function logSession(sessionKey) {
@@ -741,14 +858,31 @@ function drawChart(canvasId, data, label, color) {
 
 // ── HISTORY ───────────────────────────────────────────────────────
 function renderHistory() {
+  renderCalendar();
+  historyFilter = null;
+  renderHistoryList();
+}
+
+function renderHistoryList() {
   const list = document.getElementById('history-list');
-  if (!state.sessions.length) {
-    list.innerHTML = `<div class="empty-state">
-      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-      <p>No sessions logged yet</p></div>`;
+  let sessions = state.sessions;
+
+  if (historyFilter) {
+    const [y,m,d] = historyFilter.split('-').map(Number);
+    sessions = sessions.filter(s => {
+      const sd = new Date(s.date);
+      return sd.getFullYear()===y && sd.getMonth()===m && sd.getDate()===d;
+    });
+  }
+
+  if (!sessions.length) {
+    list.innerHTML = historyFilter
+      ? `<div class="empty-state"><p>No session on this date</p><p style="font-size:13px;margin-top:6px;color:var(--muted)">Tap a highlighted date to filter</p></div>`
+      : `<div class="empty-state"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><p>No sessions logged yet</p></div>`;
     return;
   }
-  list.innerHTML = state.sessions.map(s => {
+
+  list.innerHTML = sessions.map(s => {
     const d = new Date(s.date);
     const dateStr = d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' });
     const liftRows = Object.values(s.lifts).map(l =>
@@ -776,7 +910,9 @@ function renderSettings() {
     <div class="tm-adjust-row">
       <span style="font-size:13px;font-weight:500;width:90px;flex-shrink:0">${names[k]}</span>
       <button class="tm-adj-btn" onclick="adjustWeight('${k}',-2.5)">−</button>
-      <div class="tm-val-display" id="wv-${k}">${state.weights[k]}<span style="font-size:12px;color:var(--muted);margin-left:2px">kg</span></div>
+      <input type="number" id="wv-input-${k}" value="${state.weights[k]}" inputmode="decimal"
+        style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:16px;font-family:var(--font);padding:8px;text-align:center;width:0;"
+        onchange="setWeight('${k}', this.value)">
       <button class="tm-adj-btn" onclick="adjustWeight('${k}',2.5)">+</button>
     </div>`).join('');
 
@@ -789,9 +925,17 @@ function renderSettings() {
 
 function adjustWeight(key, delta) {
   state.weights[key] = Math.max(0, +((state.weights[key]||0) + delta).toFixed(2));
-  const el = document.getElementById('wv-' + key);
-  if (el) el.innerHTML = `${state.weights[key]}<span style="font-size:12px;color:var(--muted);margin-left:2px">kg</span>`;
+  const el = document.getElementById('wv-input-' + key);
+  if (el) el.value = state.weights[key];
   save();
+}
+
+function setWeight(key, val) {
+  const parsed = parseFloat(val);
+  if (!isNaN(parsed) && parsed >= 0) {
+    state.weights[key] = +parsed.toFixed(2);
+    save();
+  }
 }
 
 function saveSettings() {
@@ -893,6 +1037,60 @@ async function appendSessionToSheet(session) {
       'POST', { values: rows }
     );
   } catch(e) { console.error(e); showToast('Sheet sync failed', 'error'); }
+}
+
+// ── CALENDAR ─────────────────────────────────────────────────────
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+
+function changeMonth(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0)  { calMonth = 11; calYear--; }
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('cal-month-label').textContent = `${months[calMonth]} ${calYear}`;
+
+  const firstDay = new Date(calYear, calMonth, 1);
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  // Monday-first: 0=Mon..6=Sun
+  let startDow = firstDay.getDay() - 1;
+  if (startDow < 0) startDow = 6;
+
+  const today = new Date();
+  const grid = document.getElementById('cal-grid');
+
+  // Build session map: date string -> session type
+  const sessionMap = {};
+  state.sessions.forEach(s => {
+    const d = new Date(s.date);
+    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    sessionMap[key] = s.session;
+  });
+
+  let html = '';
+  for (let i=0; i<startDow; i++) html += '<div class="cal-day empty"></div>';
+  for (let d=1; d<=daysInMonth; d++) {
+    const key = `${calYear}-${calMonth}-${d}`;
+    const sess = sessionMap[key];
+    const isToday = today.getFullYear()===calYear && today.getMonth()===calMonth && today.getDate()===d;
+    const cls = sess ? `has-session-${sess.toLowerCase()}` : '';
+    html += `<div class="cal-day ${cls} ${isToday?'today':''}" onclick="filterHistoryByDate(${calYear},${calMonth},${d})">
+      ${d}
+      ${sess ? '<div class="cal-dot"></div>' : ''}
+    </div>`;
+  }
+  grid.innerHTML = html;
+}
+
+let historyFilter = null;
+function filterHistoryByDate(y, m, d) {
+  const key = `${y}-${m}-${d}`;
+  historyFilter = historyFilter === key ? null : key;
+  renderHistoryList();
 }
 
 // ── INIT ─────────────────────────────────────────────────────────
