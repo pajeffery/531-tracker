@@ -175,16 +175,16 @@
   <div class="screen-header">
     <div id="session-badge" class="session-badge badge-a">Session A</div>
     <h1>Madcow 5×5</h1>
-    <p class="subtitle" id="workout-subtitle">Monday — Squat, Bench, Row</p>
+    <p class="subtitle" id="workout-subtitle">Squat, Bench, Row</p>
   </div>
   <div class="week-info">
     <div>Week <span id="week-num">1</span></div>
     <div>Session <span id="session-num">1</span> of all time</div>
   </div>
   <div class="session-nav">
-    <button class="session-nav-btn" id="nav-a" onclick="switchSession('A')">A — Mon</button>
-    <button class="session-nav-btn" id="nav-b" onclick="switchSession('B')">B — Wed</button>
-    <button class="session-nav-btn" id="nav-c" onclick="switchSession('C')">C — Fri</button>
+    <button class="session-nav-btn" id="nav-a" onclick="switchSession('A')">Session A</button>
+    <button class="session-nav-btn" id="nav-b" onclick="switchSession('B')">Session B</button>
+    <button class="session-nav-btn" id="nav-c" onclick="switchSession('C')">Session C</button>
   </div>
   <div id="workout-content"></div>
 </div>
@@ -359,17 +359,17 @@ const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googlea
 
 const SESSIONS = {
   A: {
-    label: 'Session A', day: 'Monday',
+    label: 'Session A',
     lifts: ['squat','bench','row'],
     type: 'normal'
   },
   B: {
-    label: 'Session B', day: 'Wednesday',
+    label: 'Session B',
     lifts: ['squat_light','ohp','deadlift'],
     type: 'normal'
   },
   C: {
-    label: 'Session C', day: 'Friday',
+    label: 'Session C',
     lifts: ['squat','bench','row'],
     type: 'heavy'
   }
@@ -531,7 +531,7 @@ function renderWorkout() {
   const badge = document.getElementById('session-badge');
   badge.textContent = session.label;
   badge.className = `session-badge badge-${s.toLowerCase()}`;
-  document.getElementById('workout-subtitle').textContent = `${session.day} — ${session.lifts.map(l => LIFT_NAMES[l]).join(', ')}`;
+  document.getElementById('workout-subtitle').textContent = session.lifts.map(l => LIFT_NAMES[l]).join(', ');
   document.getElementById('week-num').textContent = state.week;
   document.getElementById('session-num').textContent = state.totalSessions + 1;
 
