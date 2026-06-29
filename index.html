@@ -129,6 +129,18 @@
   .dot-green { background: var(--success); } .dot-grey { background: var(--muted); }
 
   .stall-banner { background: rgba(255,79,79,0.1); border: 1px solid rgba(255,79,79,0.3); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 12px; font-size: 13px; color: var(--danger); }
+  .deload-banner { background: rgba(232,255,71,0.08); border: 1px solid rgba(232,255,71,0.3); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px; }
+  .deload-banner h3 { color: var(--accent); margin-bottom: 6px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+  .deload-banner p { font-size: 13px; color: var(--muted); margin-bottom: 10px; line-height: 1.5; }
+  .coaching-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px; }
+  .coaching-card h3 { color: var(--accent); margin-bottom: 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+  .coaching-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .coaching-item:last-child { border-bottom: none; }
+  .coaching-lift { color: var(--muted); }
+  .coaching-status { display: flex; align-items: center; gap: 8px; }
+  .status-ok { color: var(--success); }
+  .status-warn { color: #f39c12; }
+  .status-danger { color: var(--danger); }
 
   .chart-wrap { overflow-x: auto; }
   .cal-day { aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;font-size:13px;position:relative; }
@@ -209,6 +221,10 @@
   <div class="card" style="margin-top:12px">
     <h3 style="margin-bottom:8px">Current Working Weights</h3>
     <div id="current-weights-display"></div>
+  </div>
+  <div class="coaching-card" style="margin-top:12px">
+    <h3>Lift Status</h3>
+    <div id="coaching-insights"></div>
   </div>
 </div>
 
@@ -342,7 +358,11 @@
     <div class="modal-title">Session Complete!</div>
     <div class="modal-subtitle" id="summary-subtitle"></div>
     <div class="stat-grid" id="summary-stats"></div>
-    <button class="btn btn-primary" onclick="closeSummary()">Done</button>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:12px">Did you hit all your rep targets?</p>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" style="flex:1" onclick="closeSummary(false)">✅ Yes, all good</button>
+      <button class="btn btn-secondary" style="flex:1" onclick="closeSummary(true)">⚠️ Missed some</button>
+    </div>
   </div>
 </div>
 
@@ -397,6 +417,11 @@ function defaultState() {
     weights: { squat: 70, bench: 45, row: 52.5, ohp: 32.5, deadlift: 80 },
     // Stall tracking: consecutive fails per lift
     stalls: { squat: 0, bench: 0, row: 0, ohp: 0, deadlift: 0 },
+    missedReps: { squat: 0, bench: 0, row: 0, ohp: 0, deadlift: 0 },
+    deloadActive: false,
+    deloadLifts: [],
+    slowProgressCycles: { squat: 0, bench: 0, row: 0, ohp: 0, deadlift: 0 },
+    lastIncrementCycle: { squat: 0, bench: 0, row: 0, ohp: 0, deadlift: 0 },
     barWeight: 20,
     rounding: 2.5,
     showWarmup: true,
@@ -443,7 +468,10 @@ function calcPlates(targetWeight) {
 }
 
 function getSetsForLift(liftKey, sessionType) {
-  const workWeight = state.weights[LIFT_KEYS[liftKey]];
+  const key = LIFT_KEYS[liftKey];
+  const isDeloading = state.deloadActive;
+  const rawWeight = state.weights[key];
+  const workWeight = isDeloading ? r(rawWeight * 0.6) : rawWeight;
   const isLight = liftKey === 'squat_light';
   const lightWeight = isLight ? r(workWeight * 0.8) : null;
   const baseWeight = isLight ? lightWeight : workWeight;
@@ -556,14 +584,31 @@ function renderWorkout() {
     return;
   }
 
-  // Check for stalls
+  // Check for deload mode or stalls
   let stallHTML = '';
-  session.lifts.forEach(liftKey => {
-    const key = LIFT_KEYS[liftKey];
-    if ((state.stalls[key] || 0) >= 2) {
-      stallHTML += `<div class="stall-banner">⚠️ ${LIFT_NAMES[liftKey]} has stalled — consider deloading 10% (${r(state.weights[key] * 0.9)}kg)</div>`;
-    }
-  });
+
+  if (state.deloadActive) {
+    stallHTML += `<div class="deload-banner">
+      <h3>🔄 Deload Active</h3>
+      <p>Working at 60% this cycle. Focus on form, recover well. Weights resume after Session C.</p>
+      <button class="btn btn-secondary btn-sm" onclick="endDeload()">End deload early</button>
+    </div>`;
+  } else {
+    session.lifts.forEach(liftKey => {
+      const key = LIFT_KEYS[liftKey];
+      const missed = state.missedReps[key] || 0;
+      const stalls = state.stalls[key] || 0;
+      if (missed >= 2) {
+        stallHTML += `<div class="stall-banner">
+          ⚠️ <strong>${LIFT_NAMES[liftKey]}</strong> — missed reps ${missed} sessions in a row.
+          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-secondary btn-sm" onclick="deloadLift('${key}')">Deload this lift (−10%)</button>
+            <button class="btn btn-secondary btn-sm" onclick="deloadAll()">Deload all lifts</button>
+          </div>
+        </div>`;
+      }
+    });
+  }
 
   // Build lift sections
   let html = stallHTML;
@@ -685,12 +730,27 @@ function showSummary(sessionKey) {
   document.getElementById('summary-modal').classList.add('visible');
 }
 
-function closeSummary() {
+function closeSummary(missedAny) {
   document.getElementById('summary-modal').classList.remove('visible');
   const btn = document.getElementById('finish-workout-btn');
   if (btn) btn.remove();
   workoutStartTime = null;
   const s = state.currentSession || 'A';
+
+  // Update missed reps tracking based on user feedback
+  const session = SESSIONS[s];
+  session.lifts.forEach(liftKey => {
+    const key = LIFT_KEYS[liftKey];
+    if (missedAny) {
+      state.missedReps[key] = (state.missedReps[key] || 0) + 1;
+      state.stalls[key] = (state.stalls[key] || 0) + 1;
+    } else {
+      // Reset on successful session
+      state.missedReps[key] = 0;
+      state.stalls[key] = 0;
+    }
+  });
+
   logSession(s);
 }
 
@@ -722,11 +782,17 @@ function logSession(sessionKey) {
   // Advance week and increment weights after every C session
   if (sessionKey === 'C') {
     state.week++;
-    // Increment all working weights by 2.5kg
-    Object.keys(state.weights).forEach(k => {
-      state.weights[k] = +(state.weights[k] + 2.5).toFixed(2);
-    });
-    showToast('Week complete! +2.5kg added to all lifts 💪', 'success');
+    if (state.deloadActive) {
+      // End deload, resume normal weights without incrementing
+      state.deloadActive = false;
+      state.deloadLifts = [];
+      showToast('Deload complete — back to full weights next session 💪', 'success');
+    } else {
+      Object.keys(state.weights).forEach(k => {
+        state.weights[k] = +(state.weights[k] + 2.5).toFixed(2);
+      });
+      showToast('Cycle complete! +2.5kg added to all lifts 💪', 'success');
+    }
   } else {
     showToast(`Session ${sessionKey} logged ✓`, 'success');
   }
@@ -783,15 +849,32 @@ function renderProgress() {
 
   drawChart('chart-main', data, chartLift.charAt(0).toUpperCase() + chartLift.slice(1), '#e8ff47');
 
-  // Current weights display
   const keys = ['squat','bench','row','ohp','deadlift'];
   const names = { squat:'Squat', bench:'Bench Press', row:'Barbell Row', ohp:'OHP', deadlift:'Deadlift' };
+
   document.getElementById('current-weights-display').innerHTML = keys.map(k =>
     `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px">
       <span style="color:var(--muted)">${names[k]}</span>
-      <span style="font-weight:600">${state.weights[k]}kg</span>
+      <span style="font-weight:600">${state.weights[k]}kg${state.deloadActive ? ` <span style="font-size:11px;color:var(--accent)">(deload: ${r(state.weights[k]*0.6)}kg)</span>` : ''}</span>
     </div>`
   ).join('');
+
+  // Coaching insights
+  document.getElementById('coaching-insights').innerHTML = keys.map(k => {
+    const missed = state.missedReps[k] || 0;
+    const sessions = state.sessions.filter(s => Object.keys(s.lifts).some(lk => LIFT_KEYS[lk] === k));
+    const recent = sessions.slice(0, 3);
+    let statusClass = 'status-ok', statusText = '✅ On track';
+    if (missed >= 2) { statusClass = 'status-danger'; statusText = '🔴 Stalling'; }
+    else if (missed === 1) { statusClass = 'status-warn'; statusText = '⚠️ Watch this'; }
+    return `<div class="coaching-item">
+      <span class="coaching-lift">${names[k]}</span>
+      <span class="coaching-status">
+        <span style="font-size:13px;font-weight:500">${state.weights[k]}kg</span>
+        <span class="${statusClass}" style="font-size:12px">${statusText}</span>
+      </span>
+    </div>`;
+  }).join('');
 }
 
 function drawChart(canvasId, data, label, color) {
@@ -956,6 +1039,35 @@ function resetApp() {
     state = defaultState(); setDone = {};
     showScreen('workout', document.querySelectorAll('.nav-btn')[0]);
   }
+}
+
+// ── DELOAD FUNCTIONS ──────────────────────────────────────────────
+function deloadLift(key) {
+  if (!confirm(`Deload ${key} by 10%? New weight: ${r(state.weights[key] * 0.9)}kg`)) return;
+  state.weights[key] = r(state.weights[key] * 0.9);
+  state.missedReps[key] = 0;
+  state.stalls[key] = 0;
+  save();
+  showToast(`${key} deloaded to ${state.weights[key]}kg`, 'success');
+  renderWorkout();
+}
+
+function deloadAll() {
+  if (!confirm('Start a full deload cycle at 60% for all lifts?')) return;
+  state.deloadActive = true;
+  state.deloadLifts = Object.keys(state.weights);
+  Object.keys(state.missedReps).forEach(k => { state.missedReps[k] = 0; state.stalls[k] = 0; });
+  save();
+  showToast('Deload cycle started 🔄', 'success');
+  renderWorkout();
+}
+
+function endDeload() {
+  state.deloadActive = false;
+  state.deloadLifts = [];
+  save();
+  showToast('Deload ended — back to full weights', 'success');
+  renderWorkout();
 }
 
 // ── GOOGLE SHEETS ─────────────────────────────────────────────────
