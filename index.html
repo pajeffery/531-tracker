@@ -328,7 +328,7 @@
         <button class="btn btn-secondary btn-sm" id="sheets-btn" onclick="handleSheetsConnect()">Connect</button>
       </div>
       <div id="sheets-info" style="display:none;margin-top:8px;padding-top:12px;border-top:1px solid var(--border)">
-        <p style="font-size:12px;color:var(--muted)">Sessions sync automatically to your <strong style="color:var(--text)">Madcow Tracker</strong> spreadsheet.</p>
+        <p style="font-size:12px;color:var(--muted)">Sessions sync automatically to your <strong style="color:var(--text)" id="sheet-name-label">Madcow Tracker</strong> spreadsheet.</p>
         <div style="margin-top:8px"><a id="sheets-link" href="#" target="_blank" style="font-size:13px;color:var(--accent);text-decoration:none">Open spreadsheet →</a></div>
       </div>
     </div>
@@ -371,6 +371,13 @@
 <script>
 // ── CONFIG ────────────────────────────────────────────────────────
 const GOOGLE_CLIENT_ID = '478746736469-aeit2it0t4skshul24dlqvqlik6i6u8i.apps.googleusercontent.com';
+
+// ── ENVIRONMENT ───────────────────────────────────────────────────
+const PROD_URL = 'polite-field-0c60d3003.azurestaticapps.net';
+const DEV_URL  = 'dev-madcow-tracker.azurestaticapps.net'; // update when dev app is created
+const IS_DEV   = window.location.hostname === DEV_URL || window.location.hostname === 'localhost';
+const SHEET_NAME = IS_DEV ? 'Madcow Tracker (Dev)' : 'Madcow Tracker';
+const ENV_LABEL  = IS_DEV ? ' (Dev)' : '';
 const IS_DEV = window.location.hostname.includes('dev') || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 const SHEET_NAME = IS_DEV ? 'Madcow Tracker (Dev)' : 'Madcow Tracker';
 const STATE_TAB = 'AppState';
@@ -1061,6 +1068,31 @@ function resetApp() {
   }
 }
 
+// ── RESTORE FROM SHEETS ──────────────────────────────────────────
+async function restoreFromSheets() {
+  showToast('Syncing from Google Sheets...', '');
+  try {
+    const sheetState = await readStateFromSheet();
+    if (sheetState) {
+      // Merge sheet state into current state, preserving google auth
+      const google = state.google;
+      state = { ...defaultState(), ...sheetState, google };
+      // Restore session history
+      const sessions = await readSessionsFromSheet();
+      if (sessions.length) state.sessions = sessions;
+      localStorage.setItem('madcow_state', JSON.stringify(state));
+      showToast('Data restored from Google Sheets ✓', 'success');
+    } else {
+      // No state in sheet yet — write current state up
+      await writeStateToSheet();
+      showToast('Data synced to Google Sheets ✓', 'success');
+    }
+  } catch(e) {
+    console.error('restoreFromSheets error:', e);
+    showToast('Could not sync from sheets', 'error');
+  }
+}
+
 // ── DELOAD FUNCTIONS ──────────────────────────────────────────────
 function deloadLift(key) {
   if (!confirm(`Deload ${key} by 10%? New weight: ${r(state.weights[key] * 0.9)}kg`)) return;
@@ -1101,6 +1133,8 @@ function updateSheetsUI() {
     btnEl.textContent = 'Disconnect'; btnEl.onclick = disconnectSheets;
     infoEl.style.display = 'block';
     if (g.spreadsheetUrl) document.getElementById('sheets-link').href = g.spreadsheetUrl;
+    const nameEl = document.getElementById('sheet-name-label');
+    if (nameEl) nameEl.textContent = SHEET_NAME;
   } else {
     statusEl.innerHTML = '<span class="status-dot dot-grey"></span>Not connected';
     btnEl.textContent = 'Connect'; btnEl.onclick = handleSheetsConnect;
@@ -1116,9 +1150,13 @@ function handleSheetsConnect() {
       callback: async (resp) => {
         if (resp.error) { showToast('Auth failed: ' + resp.error, 'error'); return; }
         state.google.token = resp.access_token;
-        state.google.connected = true; save();
-        showToast('Connected!', 'success');
-        await ensureSpreadsheet(); updateSheetsUI();
+        state.google.connected = true;
+        localStorage.setItem('madcow_state', JSON.stringify(state));
+        showToast('Connected — loading your data...', 'success');
+        await ensureSpreadsheet();
+        await restoreFromSheets();
+        updateSheetsUI();
+        renderWorkout();
       }
     });
   }
@@ -1143,20 +1181,120 @@ async function sheetsRequest(url, method='GET', body=null) {
 async function ensureSpreadsheet() {
   try {
     if (state.google.spreadsheetId) {
-      try { await sheetsRequest(`https://sheets.googleapis.com/v4/spreadsheets/${state.google.spreadsheetId}?fields=spreadsheetId`); return; }
-      catch { state.google.spreadsheetId = null; }
+      try {
+        await sheetsRequest(`https://sheets.googleapis.com/v4/spreadsheets/${state.google.spreadsheetId}?fields=spreadsheetId`);
+        // Ensure State tab exists
+        await ensureStateTab();
+        return;
+      } catch { state.google.spreadsheetId = null; }
     }
-    const headers = [['Date','Week','Session','Lift','Work Weight (kg)']];
+    // Create spreadsheet with Sessions + State tabs
+    const sessionHeaders = ['Date','Week','Session','Lift','Work Weight (kg)'];
+    const stateHeaders   = ['Key','Value'];
     const ss = await sheetsRequest('https://sheets.googleapis.com/v4/spreadsheets', 'POST', {
-      properties: { title: 'Madcow Tracker' },
-      sheets: [{ properties: { title: 'Sessions' }, data: [{ startRow:0, startColumn:0,
-        rowData: [{ values: headers[0].map(v => ({ userEnteredValue:{stringValue:v}, userEnteredFormat:{textFormat:{bold:true}} })) }]
-      }]}]
+      properties: { title: SHEET_NAME },
+      sheets: [
+        { properties: { title: 'Sessions' }, data: [{ startRow:0, startColumn:0,
+          rowData: [{ values: sessionHeaders.map(v => ({ userEnteredValue:{stringValue:v}, userEnteredFormat:{textFormat:{bold:true}} })) }]
+        }]},
+        { properties: { title: 'State' }, data: [{ startRow:0, startColumn:0,
+          rowData: [{ values: stateHeaders.map(v => ({ userEnteredValue:{stringValue:v}, userEnteredFormat:{textFormat:{bold:true}} })) }]
+        }]}
+      ]
     });
     state.google.spreadsheetId = ss.spreadsheetId;
     state.google.spreadsheetUrl = ss.spreadsheetUrl;
-    save(); showToast('Spreadsheet created in Drive', 'success');
+    save();
+    // Write initial state
+    await writeStateToSheet();
+    showToast(`${SHEET_NAME} created in Drive`, 'success');
   } catch(e) { console.error(e); showToast('Could not create spreadsheet', 'error'); }
+}
+
+async function ensureStateTab() {
+  try {
+    await sheetsRequest(`https://sheets.googleapis.com/v4/spreadsheets/${state.google.spreadsheetId}/values/State!A1`);
+  } catch {
+    // State tab doesn't exist — add it
+    await sheetsRequest(`https://sheets.googleapis.com/v4/spreadsheets/${state.google.spreadsheetId}:batchUpdate`, 'POST', {
+      requests: [{ addSheet: { properties: { title: 'State' } } }]
+    });
+  }
+}
+
+async function writeStateToSheet() {
+  if (!state.google.token || !state.google.spreadsheetId) return;
+  try {
+    const stateData = {
+      week:         state.week,
+      totalSessions: state.totalSessions,
+      currentSession: state.currentSession,
+      deloadActive: state.deloadActive,
+      weights:      JSON.stringify(state.weights),
+      missedReps:   JSON.stringify(state.missedReps),
+      stalls:       JSON.stringify(state.stalls),
+      slowProgressCycles: JSON.stringify(state.slowProgressCycles || {}),
+    };
+    const rows = Object.entries(stateData).map(([k,v]) => [k, String(v)]);
+    // Clear and rewrite State tab
+    await sheetsRequest(
+      `https://sheets.googleapis.com/v4/spreadsheets/${state.google.spreadsheetId}/values/State!A2:B100:clear`,
+      'POST', {}
+    );
+    await sheetsRequest(
+      `https://sheets.googleapis.com/v4/spreadsheets/${state.google.spreadsheetId}/values/State!A2:B:append?valueInputOption=RAW`,
+      'POST', { values: rows }
+    );
+  } catch(e) { console.error('writeStateToSheet error:', e); }
+}
+
+async function readStateFromSheet() {
+  if (!state.google.token || !state.google.spreadsheetId) return null;
+  try {
+    const res = await sheetsRequest(
+      `https://sheets.googleapis.com/v4/spreadsheets/${state.google.spreadsheetId}/values/State!A2:B100`
+    );
+    const rows = res.values || [];
+    if (!rows.length) return null;
+    const map = {};
+    rows.forEach(([k,v]) => { map[k] = v; });
+    if (!map.weights) return null;
+    return {
+      week:           parseInt(map.week) || 1,
+      totalSessions:  parseInt(map.totalSessions) || 0,
+      currentSession: map.currentSession || 'A',
+      deloadActive:   map.deloadActive === 'true',
+      weights:        JSON.parse(map.weights),
+      missedReps:     JSON.parse(map.missedReps || '{}'),
+      stalls:         JSON.parse(map.stalls || '{}'),
+      slowProgressCycles: JSON.parse(map.slowProgressCycles || '{}'),
+    };
+  } catch(e) { console.error('readStateFromSheet error:', e); return null; }
+}
+
+async function readSessionsFromSheet() {
+  if (!state.google.token || !state.google.spreadsheetId) return [];
+  try {
+    const res = await sheetsRequest(
+      `https://sheets.googleapis.com/v4/spreadsheets/${state.google.spreadsheetId}/values/Sessions!A2:E1000`
+    );
+    const rows = res.values || [];
+    // Reconstruct session objects grouped by date+session
+    const grouped = {};
+    rows.forEach(([date, week, session, lift, weight]) => {
+      const key = `${date}-${session}-${week}`;
+      if (!grouped[key]) grouped[key] = { date, week: parseInt(week), session, lifts: {} };
+      grouped[key].lifts[lift] = { name: lift, weight: parseFloat(weight) };
+    });
+    return Object.values(grouped).map((s,i) => ({
+      id: i,
+      session: s.session,
+      week: s.week,
+      date: new Date(s.date.split('/').reverse().join('-')).toISOString(),
+      lifts: s.lifts,
+      weights: state.weights
+    })).reverse();
+  } catch(e) { console.error('readSessionsFromSheet error:', e); return []; }
 }
 
 async function appendSessionToSheet(session) {
@@ -1168,6 +1306,7 @@ async function appendSessionToSheet(session) {
       `https://sheets.googleapis.com/v4/spreadsheets/${state.google.spreadsheetId}/values/Sessions!A:E:append?valueInputOption=USER_ENTERED`,
       'POST', { values: rows }
     );
+    await writeStateToSheet();
   } catch(e) { console.error(e); showToast('Sheet sync failed', 'error'); }
 }
 
