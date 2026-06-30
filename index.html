@@ -378,8 +378,6 @@ const DEV_URL  = 'dev-madcow-tracker.azurestaticapps.net'; // update when dev ap
 const IS_DEV   = window.location.hostname === DEV_URL || window.location.hostname === 'localhost';
 const SHEET_NAME = IS_DEV ? 'Forge (Dev)' : 'Forge';
 const ENV_LABEL  = IS_DEV ? ' (Dev)' : '';
-const IS_DEV = window.location.hostname.includes('dev') || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const SHEET_NAME = IS_DEV ? 'Forge (Dev)' : 'Forge';
 const STATE_TAB = 'AppState';
 const SESSIONS_TAB = 'Sessions';
 const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
