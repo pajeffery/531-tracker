@@ -168,6 +168,44 @@
   .stat-card { background: var(--surface2); border-radius: var(--radius); padding: 14px; }
   .stat-val { font-size: 24px; font-weight: 700; color: var(--accent); }
   .stat-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* EXERCISE PICKER */
+  .exercise-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .exercise-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 14px; cursor: pointer; transition: all 0.15s; text-align: center; position: relative; }
+  .exercise-card:active { transform: scale(0.97); }
+  .exercise-card.complete { border-color: var(--success); background: rgba(71,232,160,0.08); }
+  .exercise-icon { font-size: 36px; margin-bottom: 10px; }
+  .exercise-name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .exercise-weight { font-size: 13px; color: var(--muted); }
+  .exercise-progress { font-size: 11px; color: var(--muted); margin-top: 6px; }
+  .exercise-check-badge { position: absolute; top: 10px; right: 10px; font-size: 18px; }
+
+  /* DETAIL VIEW */
+  .detail-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .back-btn { width: 40px; height: 40px; border-radius: 10px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .detail-title { font-size: 22px; font-weight: 700; }
+  .detail-subtitle { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+  /* BIG TAP SET ROWS */
+  .big-set-row { display: flex; align-items: center; gap: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; cursor: pointer; transition: all 0.15s; }
+  .big-set-row:active { transform: scale(0.98); }
+  .big-set-row.set-done { background: rgba(71,232,160,0.1); border-color: rgba(71,232,160,0.4); }
+  .big-set-row.set-warmup { opacity: 0.65; padding: 12px 16px; }
+  .big-set-num { font-size: 13px; color: var(--muted); width: 28px; flex-shrink: 0; font-weight: 600; }
+  .big-set-info { flex: 1; min-width: 0; }
+  .big-set-weight-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; }
+  .big-set-weight { font-size: 22px; font-weight: 700; }
+  .big-set-unit { font-size: 13px; color: var(--muted); }
+  .big-set-reps { font-size: 13px; color: var(--muted); font-weight: 500; }
+  .big-set-row.set-warmup .big-set-weight { font-size: 17px; }
+  .big-plate-display { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+  .big-check { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
+  .big-check.done { background: var(--success); border-color: var(--success); transform: scale(1.1); }
+  .big-check.done::after { content: '✓'; color: #111; font-size: 18px; font-weight: 900; }
+  .big-set-row.set-warmup .big-check { width: 28px; height: 28px; }
+
+  @keyframes pulseCheck { 0% { transform: scale(1); } 50% { transform: scale(1.25); } 100% { transform: scale(1.1); } }
+  .big-check.done.just-checked { animation: pulseCheck 0.3s ease; }
 </style>
 </head>
 <body>
@@ -198,7 +236,7 @@
     <div>Week <span id="week-num">1</span></div>
     <div>Session <span id="session-num">1</span> of all time</div>
   </div>
-  <div class="session-nav">
+  <div class="session-nav" id="session-nav-row">
     <button class="session-nav-btn" id="nav-a" onclick="switchSession('A')">Session A</button>
     <button class="session-nav-btn" id="nav-b" onclick="switchSession('B')">Session B</button>
     <button class="session-nav-btn" id="nav-c" onclick="switchSession('C')">Session C</button>
@@ -373,8 +411,8 @@
 const GOOGLE_CLIENT_ID = '478746736469-aeit2it0t4skshul24dlqvqlik6i6u8i.apps.googleusercontent.com';
 
 // ── ENVIRONMENT ───────────────────────────────────────────────────
-const PROD_URL = 'polite-field-0c60d3003.azurestaticapps.net';
-const DEV_URL  = 'dev-madcow-tracker.azurestaticapps.net'; // update when dev app is created
+const PROD_URL = 'happy-pond-003313103.7.azurestaticapps.net';
+const DEV_URL  = 'agreeable-pond-07ec37b03.7.azurestaticapps.net';
 const IS_DEV   = window.location.hostname === DEV_URL || window.location.hostname === 'localhost';
 const SHEET_NAME = IS_DEV ? 'Forge (Dev)' : 'Forge';
 const ENV_LABEL  = IS_DEV ? ' (Dev)' : '';
@@ -479,7 +517,7 @@ function calcPlates(targetWeight) {
     while (remaining >= p - 0.01) { result.push(p); remaining -= p; remaining = Math.round(remaining*1000)/1000; }
   }
   if (!result.length) return `<span class="plate p-bar">bar only</span>`;
-  return `<span class="plate p-bar">bar</span>` + result.map(p => `<span class="plate ${PLATE_CLASSES[p]||'p-2'}">${p}</span>`).join('') + `<span style="font-size:10px;color:var(--muted);margin-left:3px">each side</span>`;
+  return `<span class="plate p-bar">bar</span>` + result.map(p => `<span class="plate ${PLATE_CLASSES[p]||'p-2'}">${p}</span>`).join('');
 }
 
 function getSetsForLift(liftKey, sessionType) {
@@ -570,8 +608,6 @@ function renderWorkout() {
   const s = state.currentSession || 'A';
   const session = SESSIONS[s];
 
-  // Badge
-  // Show connect prompt if not connected to sheets
   const prompt = document.getElementById('connect-prompt');
   if (prompt) prompt.style.display = (!state.google || !state.google.connected) ? 'block' : 'none';
 
@@ -582,19 +618,21 @@ function renderWorkout() {
   document.getElementById('week-num').textContent = state.week;
   document.getElementById('session-num').textContent = state.totalSessions + 1;
 
-  // Session nav
   ['A','B','C'].forEach(x => {
     const btn = document.getElementById('nav-' + x.toLowerCase());
     btn.className = 'session-nav-btn' + (x === s ? ` active-${x.toLowerCase()}` : '');
   });
 
+  const navRow = document.getElementById('session-nav-row');
+
   // Check if already logged today
   const today = new Date().toDateString();
   const alreadyDone = state.sessions.find(sess => sess.session === s && new Date(sess.date).toDateString() === today);
-
   const content = document.getElementById('workout-content');
 
   if (alreadyDone) {
+    navRow.style.display = 'flex';
+    activeExercise = null;
     content.innerHTML = `<div class="complete-banner">
       <div class="big">✅</div>
       <p>Session ${s} logged today</p>
@@ -603,9 +641,22 @@ function renderWorkout() {
     return;
   }
 
-  // Check for deload mode or stalls
-  let stallHTML = '';
+  // DETAIL VIEW — a specific exercise is open
+  if (activeExercise !== null) {
+    navRow.style.display = 'none';
+    renderExerciseDetail(s, session, activeExercise);
+    return;
+  }
 
+  // ICON PICKER VIEW
+  navRow.style.display = 'flex';
+  renderExercisePicker(s, session);
+}
+
+function renderExercisePicker(s, session) {
+  const content = document.getElementById('workout-content');
+
+  let stallHTML = '';
   if (state.deloadActive) {
     stallHTML += `<div class="deload-banner">
       <h3>🔄 Deload Active</h3>
@@ -616,7 +667,6 @@ function renderWorkout() {
     session.lifts.forEach(liftKey => {
       const key = LIFT_KEYS[liftKey];
       const missed = state.missedReps[key] || 0;
-      const stalls = state.stalls[key] || 0;
       if (missed >= 2) {
         stallHTML += `<div class="stall-banner">
           ⚠️ <strong>${LIFT_NAMES[liftKey]}</strong> — missed reps ${missed} sessions in a row.
@@ -629,68 +679,98 @@ function renderWorkout() {
     });
   }
 
-  // Build lift sections
-  let html = stallHTML;
+  const ICONS = { squat: '🏋️', bench: '🛋️', row: '🚣', ohp: '🔝', deadlift: '⬆️', squat_light: '🏋️' };
+
+  let grid = '<div class="exercise-grid">';
   session.lifts.forEach((liftKey, li) => {
     const sets = getSetsForLift(liftKey, session.type);
     const workWeight = state.weights[LIFT_KEYS[liftKey]];
     const displayWeight = liftKey === 'squat_light' ? r(workWeight * 0.8) : workWeight;
 
-    let rows = '';
-    if (state.showWarmup) {
-      rows += `<tr><td colspan="4" class="section-label">Warm-up</td></tr>`;
-    }
+    const checkableSets = sets.filter(set => state.showWarmup || set.type !== 'warmup');
+    const doneCount = checkableSets.filter((set, si) => {
+      const realIdx = sets.indexOf(set);
+      return setDone[`${li}-${realIdx}`];
+    }).length;
+    const isComplete = doneCount === checkableSets.length && checkableSets.length > 0;
 
-    sets.forEach((set, si) => {
-      if (!state.showWarmup && set.type === 'warmup') return;
-      if (set.type !== 'warmup' && state.showWarmup) {
-        const prevType = sets[si-1]?.type;
-        if (prevType === 'warmup') rows += `<tr><td colspan="4" class="section-label">Working Sets</td></tr>`;
-      }
+    grid += `<div class="exercise-card ${isComplete ? 'complete' : ''}" onclick="openExercise(${li})">
+      ${isComplete ? '<div class="exercise-check-badge">✅</div>' : ''}
+      <div class="exercise-icon">${ICONS[liftKey] || '💪'}</div>
+      <div class="exercise-name">${LIFT_NAMES[liftKey]}</div>
+      <div class="exercise-weight">${displayWeight}kg</div>
+      <div class="exercise-progress">${doneCount}/${checkableSets.length} sets</div>
+    </div>`;
+  });
+  grid += '</div>';
 
-      const key = `${li}-${si}`;
-      const checked = setDone[key] || false;
-      const rowClass = set.type === 'heavy' ? 'heavy-row' : set.type === 'back' ? 'heavy-row' : set.type === 'work' ? 'work-row' : 'warmup-row';
-      const label = set.label || `${set.reps} reps`;
-
-      rows += `<tr class="set-row ${rowClass}">
-        <td>${set.type === 'warmup' ? `W${si+1}` : (set.type==='heavy'?'H':set.type==='back'?'B':`${si-WARMUP_PCTS.length+1}`)}</td>
-        <td>
-          <span class="weight-val">${set.weight}</span><span style="font-size:11px;color:var(--muted);margin-left:2px">kg</span><br>
-          <span class="pct-label">${set.pct}% · ${label}</span>
-          <div class="plate-display">${calcPlates(set.weight)}</div>
-        </td>
-        <td style="text-align:center;color:var(--muted);font-size:13px">${set.reps}</td>
-        <td><div class="set-check ${checked?'done':''}" onclick="toggleSet('${key}')"></div></td>
-      </tr>`;
+  const allDone = session.lifts.every((liftKey, li) => {
+    const sets = getSetsForLift(liftKey, session.type);
+    const checkableSets = sets.filter(set => state.showWarmup || set.type !== 'warmup');
+    return checkableSets.every((set, si) => {
+      const realIdx = sets.indexOf(set);
+      return setDone[`${li}-${realIdx}`];
     });
+  });
 
-    html += `<div class="lift-section">
-      <div class="lift-title">
-        <span class="lift-name">${LIFT_NAMES[liftKey]}</span>
-        <span class="lift-workweight">${displayWeight}kg work set</span>
+  content.innerHTML = stallHTML + grid +
+    (allDone ? `<button class="btn btn-primary" style="margin-top:20px" onclick="logSession('${s}')">Log Session ${s}</button>` : '');
+}
+
+function openExercise(li) {
+  activeExercise = li;
+  renderWorkout();
+}
+
+function closeExercise() {
+  activeExercise = null;
+  renderWorkout();
+}
+
+function renderExerciseDetail(s, session, li) {
+  const content = document.getElementById('workout-content');
+  const liftKey = session.lifts[li];
+  const sets = getSetsForLift(liftKey, session.type);
+  const workWeight = state.weights[LIFT_KEYS[liftKey]];
+  const displayWeight = liftKey === 'squat_light' ? r(workWeight * 0.8) : workWeight;
+
+  let rowsHTML = '';
+  let workSetCounter = 0;
+  sets.forEach((set, si) => {
+    if (!state.showWarmup && set.type === 'warmup') return;
+
+    const key = `${li}-${si}`;
+    const checked = setDone[key] || false;
+    const isWarmup = set.type === 'warmup';
+    const label = set.label || `${set.reps} reps`;
+    let setLabel;
+    if (isWarmup) { setLabel = 'Warm-up'; }
+    else { workSetCounter++; setLabel = set.type === 'heavy' ? 'Heavy' : set.type === 'back' ? 'Back-off' : `Set ${workSetCounter}`; }
+
+    rowsHTML += `<div class="big-set-row ${checked ? 'set-done' : ''} ${isWarmup ? 'set-warmup' : ''}" onclick="toggleSet('${key}')">
+      <div class="big-set-num">${setLabel}</div>
+      <div class="big-set-info">
+        <div class="big-set-weight-row">
+          <span class="big-set-weight">${set.weight}</span>
+          <span class="big-set-unit">kg</span>
+          <span class="big-set-reps">× ${set.reps}</span>
+        </div>
+        <div class="big-plate-display">${calcPlates(set.weight)}</div>
       </div>
-      <div class="card" style="padding:12px 14px">
-        <table class="sets-table">
-          <thead><tr><th>#</th><th>Weight / Plates</th><th style="text-align:center">Reps</th><th style="text-align:right">✓</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>
+      <div class="big-check ${checked ? 'done' : ''}" id="check-${key}"></div>
     </div>`;
   });
 
-  html += `<button class="btn btn-primary" onclick="logSession('${s}')">Log Session ${s}</button>`;
-  content.innerHTML = html;
-}
-
-function toggleSet(key) {
-  setDone[key] = !setDone[key];
-  if (setDone[key]) {
-    if (!workoutStartTime) workoutStartTime = Date.now();
-    startTimer();
-  }
-  checkAllSetsDone();
-  renderWorkout();
+  content.innerHTML = `
+    <div class="detail-header">
+      <button class="back-btn" onclick="closeExercise()">←</button>
+      <div>
+        <div class="detail-title">${LIFT_NAMES[liftKey]}</div>
+        <div class="detail-subtitle">${displayWeight}kg work set</div>
+      </div>
+    </div>
+    ${rowsHTML}
+  `;
 }
 
 function checkAllSetsDone() {
