@@ -723,6 +723,11 @@ function openExercise(li) {
   renderWorkout();
 }
 
+function closeExercise() {
+  activeExercise = null;
+  renderWorkout();
+}
+
 function renderExerciseDetail(s, session, li) {
   const content = document.getElementById('workout-content');
   const liftKey = session.lifts[li];
