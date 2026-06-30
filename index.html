@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#111111">
-<title>Madcow 5×5</title>
+<title>Forge</title>
 <style>
   :root {
     --bg: #111111; --surface: #1a1a1a; --surface2: #222222; --border: #2e2e2e;
@@ -186,7 +186,7 @@
 <div class="screen active" id="screen-workout">
   <div class="screen-header">
     <div id="session-badge" class="session-badge badge-a">Session A</div>
-    <h1>Madcow 5×5</h1>
+    <h1>Forge</h1>
     <p class="subtitle" id="workout-subtitle">Squat, Bench, Row</p>
   </div>
   <div id="connect-prompt" style="display:none;background:rgba(232,255,71,0.08);border:1px solid rgba(232,255,71,0.3);border-radius:12px;padding:14px 16px;margin-bottom:16px">
@@ -328,7 +328,7 @@
         <button class="btn btn-secondary btn-sm" id="sheets-btn" onclick="handleSheetsConnect()">Connect</button>
       </div>
       <div id="sheets-info" style="display:none;margin-top:8px;padding-top:12px;border-top:1px solid var(--border)">
-        <p style="font-size:12px;color:var(--muted)">Sessions sync automatically to your <strong style="color:var(--text)" id="sheet-name-label">Madcow Tracker</strong> spreadsheet.</p>
+        <p style="font-size:12px;color:var(--muted)">Sessions sync automatically to your <strong style="color:var(--text)" id="sheet-name-label">Forge</strong> spreadsheet.</p>
         <div style="margin-top:8px"><a id="sheets-link" href="#" target="_blank" style="font-size:13px;color:var(--accent);text-decoration:none">Open spreadsheet →</a></div>
       </div>
     </div>
@@ -376,10 +376,10 @@ const GOOGLE_CLIENT_ID = '478746736469-aeit2it0t4skshul24dlqvqlik6i6u8i.apps.goo
 const PROD_URL = 'polite-field-0c60d3003.azurestaticapps.net';
 const DEV_URL  = 'dev-madcow-tracker.azurestaticapps.net'; // update when dev app is created
 const IS_DEV   = window.location.hostname === DEV_URL || window.location.hostname === 'localhost';
-const SHEET_NAME = IS_DEV ? 'Madcow Tracker (Dev)' : 'Madcow Tracker';
+const SHEET_NAME = IS_DEV ? 'Forge (Dev)' : 'Forge';
 const ENV_LABEL  = IS_DEV ? ' (Dev)' : '';
 const IS_DEV = window.location.hostname.includes('dev') || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const SHEET_NAME = IS_DEV ? 'Madcow Tracker (Dev)' : 'Madcow Tracker';
+const SHEET_NAME = IS_DEV ? 'Forge (Dev)' : 'Forge';
 const STATE_TAB = 'AppState';
 const SESSIONS_TAB = 'Sessions';
 const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
@@ -445,11 +445,11 @@ function defaultState() {
 }
 
 function loadState() {
-  try { return JSON.parse(localStorage.getItem('madcow_state') || 'null') || defaultState(); }
+  try { return JSON.parse(localStorage.getItem('forge_state') || 'null') || defaultState(); }
   catch { return defaultState(); }
 }
 function save() {
-  localStorage.setItem('madcow_state', JSON.stringify(state));
+  localStorage.setItem('forge_state', JSON.stringify(state));
   if (state.google && state.google.connected && state.google.spreadsheetId) {
     syncStateToSheet().catch(e => console.error('State sync failed:', e));
   }
@@ -1062,7 +1062,7 @@ function saveSettings() {
 
 function resetApp() {
   if (confirm('Reset all data? This cannot be undone.')) {
-    localStorage.removeItem('madcow_state');
+    localStorage.removeItem('forge_state');
     state = defaultState(); setDone = {};
     showScreen('workout', document.querySelectorAll('.nav-btn')[0]);
   }
@@ -1080,7 +1080,7 @@ async function restoreFromSheets() {
       // Restore session history
       const sessions = await readSessionsFromSheet();
       if (sessions.length) state.sessions = sessions;
-      localStorage.setItem('madcow_state', JSON.stringify(state));
+      localStorage.setItem('forge_state', JSON.stringify(state));
       showToast('Data restored from Google Sheets ✓', 'success');
     } else {
       // No state in sheet yet — write current state up
@@ -1151,7 +1151,7 @@ function handleSheetsConnect() {
         if (resp.error) { showToast('Auth failed: ' + resp.error, 'error'); return; }
         state.google.token = resp.access_token;
         state.google.connected = true;
-        localStorage.setItem('madcow_state', JSON.stringify(state));
+        localStorage.setItem('forge_state', JSON.stringify(state));
         showToast('Connected — loading your data...', 'success');
         await ensureSpreadsheet();
         await restoreFromSheets();
@@ -1371,7 +1371,7 @@ async function init() {
     // Token from previous session won't be valid — show reconnect prompt
     state.google.connected = false;
     state.google.token = null;
-    localStorage.setItem('madcow_state', JSON.stringify(state));
+    localStorage.setItem('forge_state', JSON.stringify(state));
   }
   renderWorkout();
 }
