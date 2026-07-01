@@ -504,6 +504,8 @@ let googleTokenClient = null;
 // ── UTILS ─────────────────────────────────────────────────────────
 function roundWeight(val, nearest) { return Math.round(val / nearest) * nearest; }
 function r(w) { return roundWeight(w, state.rounding || 2.5); }
+// Work set weights must always be multiples of 2.5kg (smallest loadable increment)
+function rWork(w) { return roundWeight(w, 2.5); }
 function unitLabel() { return 'kg'; }
 
 const PLATES_KG = [25, 20, 15, 10, 5, 2.5, 1.25];
@@ -536,21 +538,21 @@ function getSetsForLift(liftKey, sessionType) {
 
   if (isLight) {
     // Light squat: just warmups + 1x5 at 80%
-    return [...warmupSets, { weight: lightWeight, reps: 5, type: 'work', pct: 80 }];
+    return [...warmupSets, { weight: rWork(lightWeight), reps: 5, type: 'work', pct: 80 }];
   }
 
   if (sessionType === 'heavy') {
     // Heavy: warmups + 5, 3, 8
     return [
       ...warmupSets,
-      { weight: r(workWeight),        reps: 5, type: 'work',  pct: 100, label: '5 reps'  },
-      { weight: r(workWeight * 1.05), reps: 3, type: 'heavy', pct: 105, label: '3 reps'  },
-      { weight: r(workWeight * 0.90), reps: 8, type: 'back',  pct: 90,  label: '8 reps'  },
+      { weight: rWork(workWeight),        reps: 5, type: 'work',  pct: 100, label: '5 reps'  },
+      { weight: rWork(workWeight * 1.05), reps: 3, type: 'heavy', pct: 105, label: '3 reps'  },
+      { weight: rWork(workWeight * 0.90), reps: 8, type: 'back',  pct: 90,  label: '8 reps'  },
     ];
   }
 
   // Normal: warmups + 1x5
-  return [...warmupSets, { weight: workWeight, reps: 5, type: 'work', pct: 100 }];
+  return [...warmupSets, { weight: rWork(workWeight), reps: 5, type: 'work', pct: 100 }];
 }
 
 // ── TOAST & TIMER ─────────────────────────────────────────────────
@@ -772,6 +774,36 @@ function renderExerciseDetail(s, session, li) {
     </div>
     ${rowsHTML}
   `;
+}
+
+function toggleSet(key) {
+  if (!workoutStartTime) workoutStartTime = Date.now();
+  setDone[key] = !setDone[key];
+  if (setDone[key]) startTimer();
+
+  // Re-render the detail view to update tick state
+  const s = state.currentSession || 'A';
+  const session = SESSIONS[s];
+  if (activeExercise !== null) {
+    renderExerciseDetail(s, session, activeExercise);
+  }
+
+  // Check if all sets for this exercise are done — auto-return to picker
+  if (activeExercise !== null) {
+    const liftKey = session.lifts[activeExercise];
+    const sets = getSetsForLift(liftKey, session.type);
+    const checkable = sets.filter((set, si) => state.showWarmup || set.type !== 'warmup');
+    const allDone = checkable.every((set, si) => {
+      const realIdx = sets.indexOf(set);
+      return setDone[`${activeExercise}-${realIdx}`];
+    });
+    if (allDone) {
+      setTimeout(() => {
+        activeExercise = null;
+        renderWorkout();
+      }, 800);
+    }
+  }
 }
 
 function checkAllSetsDone() {
