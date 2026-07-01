@@ -533,7 +533,7 @@ function getSetsForLift(liftKey, sessionType) {
   const baseWeight = isLight ? lightWeight : workWeight;
 
   const warmupSets = WARMUP_PCTS.map(pct => ({
-    weight: r(baseWeight * pct), reps: 5, type: 'warmup', pct: Math.round(pct*100)
+    weight: rWork(baseWeight * pct), reps: 5, type: 'warmup', pct: Math.round(pct*100)
   }));
 
   if (isLight) {
