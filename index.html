@@ -471,7 +471,7 @@ function defaultState() {
     slowProgressCycles: { squat: 0, bench: 0, row: 0, ohp: 0, deadlift: 0 },
     lastIncrementCycle: { squat: 0, bench: 0, row: 0, ohp: 0, deadlift: 0 },
     barWeight: 20,
-    rounding: 2.5,
+    rounding: 1.25, // smallest plate size; minimum bar increment = rounding × 2
     showWarmup: true,
     restSeconds: 180,
     sessions: [],
@@ -504,8 +504,8 @@ let googleTokenClient = null;
 // ── UTILS ─────────────────────────────────────────────────────────
 function roundWeight(val, nearest) { return Math.round(val / nearest) * nearest; }
 function r(w) { return roundWeight(w, state.rounding || 2.5); }
-// Work set weights must always be multiples of 2.5kg (smallest loadable increment)
-function rWork(w) { return roundWeight(w, 2.5); }
+// Work set weights must always be multiples of smallest plate × 2 (minimum loadable increment)
+function rWork(w) { return roundWeight(w, (state.rounding || 1.25) * 2); }
 function unitLabel() { return 'kg'; }
 
 const PLATES_KG = [25, 20, 15, 10, 5, 2.5, 1.25];
@@ -1139,7 +1139,7 @@ function renderSettings() {
 
   document.getElementById('bar-weight').value = state.barWeight || 20;
   document.getElementById('show-warmup').checked = state.showWarmup !== false;
-  document.querySelectorAll('input[name="rounding"]').forEach(r => { r.checked = parseFloat(r.value) === (state.rounding||2.5); });
+  document.querySelectorAll('input[name="rounding"]').forEach(r => { r.checked = parseFloat(r.value) === (state.rounding||1.25); });
   document.querySelectorAll('input[name="rest"]').forEach(r => { r.checked = parseInt(r.value) === (state.restSeconds||180); });
   updateSheetsUI();
 }
