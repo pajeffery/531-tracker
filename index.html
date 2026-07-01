@@ -202,6 +202,9 @@
   .big-check { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
   .big-check.done { background: var(--success); border-color: var(--success); transform: scale(1.1); }
   .big-check.done::after { content: '✓'; color: #111; font-size: 18px; font-weight: 900; }
+  .big-check.failed { background: var(--danger); border-color: var(--danger); transform: scale(1.1); }
+  .big-check.failed::after { content: '✗'; color: #fff; font-size: 18px; font-weight: 900; }
+  .big-set-row.set-failed { background: rgba(255,79,79,0.08); border-color: rgba(255,79,79,0.3); }
   .big-set-row.set-warmup .big-check { width: 28px; height: 28px; }
 
   @keyframes pulseCheck { 0% { transform: scale(1); } 50% { transform: scale(1.25); } 100% { transform: scale(1.1); } }
@@ -236,7 +239,7 @@
     <div>Week <span id="week-num">1</span></div>
     <div>Session <span id="session-num">1</span> of all time</div>
   </div>
-  <div class="session-nav" id="session-nav-row">
+  <div class="session-nav" id="session-nav-row" style="display:none">
     <button class="session-nav-btn" id="nav-a" onclick="switchSession('A')">Session A</button>
     <button class="session-nav-btn" id="nav-b" onclick="switchSession('B')">Session B</button>
     <button class="session-nav-btn" id="nav-c" onclick="switchSession('C')">Session C</button>
@@ -608,7 +611,24 @@ function switchSession(s) {
 }
 
 function renderWorkout() {
-  const s = state.currentSession || 'A';
+  // Auto-advance: find the correct next session based on logged history
+  const today = new Date().toDateString();
+  const todaySession = state.sessions.find(sess => new Date(sess.date).toDateString() === today);
+  if (todaySession) {
+    // Already logged something today — show that session as done
+    state.currentSession = todaySession.session;
+  } else {
+    // Find the last logged session and advance to the next one
+    const last = state.sessions[0];
+    if (last) {
+      const next = last.session === 'A' ? 'B' : last.session === 'B' ? 'C' : 'A';
+      state.currentSession = next;
+    } else {
+      state.currentSession = state.currentSession || 'A';
+    }
+  }
+
+  const s = state.currentSession;
   const session = SESSIONS[s];
 
   const prompt = document.getElementById('connect-prompt');
@@ -630,17 +650,17 @@ function renderWorkout() {
 
   // Check if already logged today
   const today = new Date().toDateString();
-  const alreadyDone = state.sessions.find(sess => sess.session === s && new Date(sess.date).toDateString() === today);
+  const alreadyDone = state.sessions.find(sess => new Date(sess.date).toDateString() === today);
   const content = document.getElementById('workout-content');
 
   if (alreadyDone) {
-    navRow.style.display = 'flex';
+    navRow.style.display = 'none';
     activeExercise = null;
     content.innerHTML = `<div class="complete-banner">
       <div class="big">✅</div>
-      <p>Session ${s} logged today</p>
+      <p>Session ${alreadyDone.session} logged today</p>
     </div>
-    <button class="btn btn-secondary" onclick="undoSession('${alreadyDone.id}')">Undo — log again</button>`;
+    <button class="btn btn-secondary" onclick="undoSession(${alreadyDone.id})">Undo — log again</button>`;
     return;
   }
 
@@ -693,7 +713,11 @@ function renderExercisePicker(s, session) {
     const checkableSets = sets.filter(set => state.showWarmup || set.type !== 'warmup');
     const doneCount = checkableSets.filter((set, si) => {
       const realIdx = sets.indexOf(set);
-      return setDone[`${li}-${realIdx}`];
+      return setDone[`${li}-${realIdx}`] !== undefined && setDone[`${li}-${realIdx}`] !== null;
+    }).length;
+    const failedCount = checkableSets.filter((set, si) => {
+      const realIdx = sets.indexOf(set);
+      return setDone[`${li}-${realIdx}`] === false;
     }).length;
     const isComplete = doneCount === checkableSets.length && checkableSets.length > 0;
 
@@ -702,7 +726,7 @@ function renderExercisePicker(s, session) {
       <div class="exercise-icon">${ICONS[liftKey] || '💪'}</div>
       <div class="exercise-name">${LIFT_NAMES[liftKey]}</div>
       <div class="exercise-weight">${displayWeight}kg</div>
-      <div class="exercise-progress">${doneCount}/${checkableSets.length} sets</div>
+      <div class="exercise-progress">${doneCount}/${checkableSets.length} sets${failedCount > 0 ? ` · <span style="color:var(--danger)">${failedCount} failed</span>` : ''}</div>
     </div>`;
   });
   grid += '</div>';
@@ -743,7 +767,6 @@ function renderExerciseDetail(s, session, li) {
     if (!state.showWarmup && set.type === 'warmup') return;
 
     const key = `${li}-${si}`;
-    const checked = setDone[key] || false;
     const isWarmup = set.type === 'warmup';
     const label = set.label || `${set.reps} reps`;
     let setLabel;
@@ -760,7 +783,7 @@ function renderExerciseDetail(s, session, li) {
         </div>
         <div class="big-plate-display">${calcPlates(set.weight)}</div>
       </div>
-      <div class="big-check ${checked ? 'done' : ''}" id="check-${key}"></div>
+      <div class="big-check ${setDone[key] === true ? 'done' : setDone[key] === false ? 'failed' : ''}" id="check-${key}"></div>
     </div>`;
   });
 
@@ -778,26 +801,36 @@ function renderExerciseDetail(s, session, li) {
 
 function toggleSet(key) {
   if (!workoutStartTime) workoutStartTime = Date.now();
-  setDone[key] = !setDone[key];
-  if (setDone[key]) startTimer();
 
-  // Re-render the detail view to update tick state
-  const s = state.currentSession || 'A';
+  // Cycle: undefined/null -> true (done) -> false (failed) -> null (reset)
+  const current = setDone[key];
+  if (current === undefined || current === null) {
+    setDone[key] = true;   // empty -> done
+    startTimer();
+  } else if (current === true) {
+    setDone[key] = false;  // done -> failed
+    stopTimer();
+  } else {
+    setDone[key] = null;   // failed -> empty
+  }
+
+  // Re-render the detail view
+  const s = state.currentSession;
   const session = SESSIONS[s];
   if (activeExercise !== null) {
     renderExerciseDetail(s, session, activeExercise);
   }
 
-  // Check if all sets for this exercise are done — auto-return to picker
+  // Auto-return to picker when all sets have been actioned (done or failed)
   if (activeExercise !== null) {
     const liftKey = session.lifts[activeExercise];
     const sets = getSetsForLift(liftKey, session.type);
-    const checkable = sets.filter((set, si) => state.showWarmup || set.type !== 'warmup');
-    const allDone = checkable.every((set, si) => {
+    const checkable = sets.filter(set => state.showWarmup || set.type !== 'warmup');
+    const allActioned = checkable.every((set, si) => {
       const realIdx = sets.indexOf(set);
-      return setDone[`${activeExercise}-${realIdx}`];
+      return setDone[`${activeExercise}-${realIdx}`] !== undefined && setDone[`${activeExercise}-${realIdx}`] !== null;
     });
-    if (allDone) {
+    if (allActioned) {
       setTimeout(() => {
         activeExercise = null;
         renderWorkout();
@@ -878,14 +911,18 @@ function closeSummary() {
     sets.forEach((set, si) => {
       if (set.type === 'warmup') return; // ignore warmups
       const doneKey = `${li}-${si}`;
-      if (!setDone[doneKey]) missedWorkingSet = true;
+      if (setDone[doneKey] !== true) missedWorkingSet = true;
     });
     if (missedWorkingSet) {
       state.missedReps[key] = (state.missedReps[key] || 0) + 1;
       state.stalls[key] = (state.stalls[key] || 0) + 1;
     } else {
-      state.missedReps[key] = 0;
-      state.stalls[key] = 0;
+      // Only reset if no failures at all
+      const anyFailed = sets.some((set, si) => {
+        if (set.type === 'warmup') return false;
+        return setDone[`${li}-${si}`] === false;
+      });
+      if (!anyFailed) { state.missedReps[key] = 0; state.stalls[key] = 0; }
     }
   });
 
@@ -946,7 +983,7 @@ function logSession(sessionKey) {
 }
 
 function undoSession(id) {
-  const idx = state.sessions.findIndex(s => s.id === id);
+  const idx = state.sessions.findIndex(s => s.id === id || s.id === +id);
   if (idx === -1) return;
   const sess = state.sessions[idx];
 
@@ -980,10 +1017,15 @@ function renderProgress() {
       || s.weights[chartLift]);
   });
 
-  const data = state.sessions.slice().reverse().map(s => ({
-    label: `W${s.week}${s.session}`,
-    value: s.weights[chartLift] || 0
-  })).filter(d => d.value > 0);
+  // Only show sessions where this lift actually appeared
+  const liftSessions = {'squat': ['A','C'], 'bench': ['A','C'], 'row': ['A','C'], 'ohp': ['B'], 'deadlift': ['B']};
+  const relevantSessions = liftSessions[chartLift] || ['A','B','C'];
+  const data = state.sessions.slice().reverse()
+    .filter(s => relevantSessions.includes(s.session))
+    .map(s => ({
+      label: `W${s.week}${s.session}`,
+      value: s.weights[chartLift] || 0
+    })).filter(d => d.value > 0);
 
   drawChart('chart-main', data, chartLift.charAt(0).toUpperCase() + chartLift.slice(1), '#e8ff47');
 
