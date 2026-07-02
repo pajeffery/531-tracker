@@ -789,13 +789,15 @@ function renderExerciseDetail(s, session, li) {
       // Check if all previous work sets have a status
       for (let i = 0; i < si; i++) {
         const prevSet = sets[i];
-        if (prevSet.type !== 'warmup' || state.showWarmup) {
-          const prevKey = `${li}-${i}`;
-          const prevStatus = setDone[prevKey];
-          if (prevStatus === undefined || prevStatus === null) {
-            isDisabled = true;
-            break;
-          }
+        // Skip warmup sets unless showing warmup
+        if (!state.showWarmup && prevSet.type === 'warmup') continue;
+        if (prevSet.type === 'warmup') continue; // Skip warmup sets for disabling logic
+        
+        const prevKey = `${li}-${i}`;
+        const prevStatus = setDone[prevKey];
+        if (prevStatus === undefined || prevStatus === null) {
+          isDisabled = true;
+          break;
         }
       }
     }
