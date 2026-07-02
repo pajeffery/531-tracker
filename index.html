@@ -204,6 +204,7 @@
   .big-check.done::after { content: '✓'; color: #111; font-size: 18px; font-weight: 900; }
   .big-check.failed { background: var(--danger); border-color: var(--danger); transform: scale(1.1); }
   .big-check.failed::after { content: '✗'; color: #fff; font-size: 18px; font-weight: 900; }
+  .big-check.disabled { opacity: 0.4; cursor: not-allowed; }
   .big-set-row.set-failed { background: rgba(255,79,79,0.08); border-color: rgba(255,79,79,0.3); }
   .big-set-row.set-warmup .big-check { width: 28px; height: 28px; }
 
@@ -736,8 +737,14 @@ function renderExercisePicker(s, session) {
     return checkableSets.every((set, si) => {
       const realIdx = sets.indexOf(set);
       const status = setDone[`${li}-${realIdx}`];
-      // Allow done (true) or failed (false), but not undefined/null (not attempted)
-      return status === true || status === false;
+      // Handle both old format (boolean) and new format (array of rep statuses)
+      if (Array.isArray(status)) {
+        // Array format: all reps must have a status
+        return status.every(s => s === true || s === false);
+      } else {
+        // Legacy format: allow done (true) or failed (false), but not undefined/null
+        return status === true || status === false;
+      }
     });
   });
 
@@ -774,17 +781,52 @@ function renderExerciseDetail(s, session, li) {
     if (isWarmup) { setLabel = 'Warm-up'; }
     else { workSetCounter++; setLabel = set.type === 'heavy' ? 'Heavy' : set.type === 'back' ? 'Back-off' : `Set ${workSetCounter}`; }
 
-    rowsHTML += `<div class="big-set-row ${setDone[key] === true ? 'set-done' : ''} ${isWarmup ? 'set-warmup' : ''}" onclick="toggleSet('${key}')">
-      <div class="big-set-num">${setLabel}</div>
-      <div class="big-set-info">
-        <div class="big-set-weight-row">
-          <span class="big-set-weight">${set.weight}</span>
-          <span class="big-set-unit">kg</span>
-          <span class="big-set-reps">× ${set.reps}</span>
+    // Get individual rep statuses for this set (array of true/false/null)
+    const repStatuses = setDone[key] || new Array(set.reps).fill(null);
+    const allRepsStatus = repStatuses.every(s => s === true || s === false);
+    
+    // Build individual rep buttons
+    let repButtonsHTML = '';
+    for (let repIdx = 0; repIdx < set.reps; repIdx++) {
+      const repStatus = repStatuses[repIdx];
+      // Rep is disabled if previous rep doesn't have a status (progressive unlock)
+      const isDisabled = repIdx > 0 && (repStatuses[repIdx - 1] === undefined || repStatuses[repIdx - 1] === null);
+      const repNum = repIdx + 1;
+      const repKey = `${key}-rep${repNum}`;
+      
+      let repClass = 'big-check';
+      if (repStatus === true) repClass += ' done';
+      else if (repStatus === false) repClass += ' failed';
+      if (isDisabled) repClass += ' disabled';
+      
+      const clickHandler = isDisabled ? '' : `toggleRep('${repKey}')`;
+      const displayText = repStatus === true ? '✓' : repStatus === false ? '✗' : repNum;
+      
+      repButtonsHTML += `<div class="${repClass}" onclick="${clickHandler}" style="font-weight: 600; font-size: 14px; cursor: ${isDisabled ? 'not-allowed' : 'pointer'};">${displayText}</div>`;
+    }
+
+    // Determine overall set visual state based on reps
+    let setClass = '';
+    if (repStatuses.some(s => s === false)) setClass = 'set-failed';
+    else if (repStatuses.every(s => s === true)) setClass = 'set-done';
+
+    rowsHTML += `<div class="big-set-row ${setClass} ${isWarmup ? 'set-warmup' : ''}" style="flex-direction: column; align-items: stretch;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div class="big-set-num">${setLabel}</div>
+          <div class="big-set-info">
+            <div class="big-set-weight-row">
+              <span class="big-set-weight">${set.weight}</span>
+              <span class="big-set-unit">kg</span>
+              <span class="big-set-reps">× ${set.reps}</span>
+            </div>
+            <div class="big-plate-display">${calcPlates(set.weight)}</div>
+          </div>
         </div>
-        <div class="big-plate-display">${calcPlates(set.weight)}</div>
       </div>
-      <div class="big-check ${setDone[key] === true ? 'done' : setDone[key] === false ? 'failed' : ''}" id="check-${key}"></div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px;">
+        ${repButtonsHTML}
+      </div>
     </div>`;
   });
 
@@ -797,10 +839,70 @@ function renderExerciseDetail(s, session, li) {
       </div>
     </div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:16px;padding:12px;background:var(--surface2);border-radius:8px">
-      <strong>Tap a set to mark:</strong> ✓ (done) → ✗ (failed) → reset
+      <strong>Mark each rep:</strong> ✓ (done) → ✗ (failed) → reset. Tap reps in order.
     </div>
     ${rowsHTML}
   `;
+}
+
+function toggleRep(repKey) {
+  if (!workoutStartTime) workoutStartTime = Date.now();
+  
+  // Parse repKey: "0-1-rep2" -> setKey="0-1", repNum=2
+  const parts = repKey.split('-rep');
+  const setKey = parts[0];
+  const repNum = parseInt(parts[1]);
+  const repIdx = repNum - 1;
+  
+  // Initialize setDone[setKey] as array if needed
+  if (!setDone[setKey]) {
+    const exercises = SESSIONS[state.currentSession || 'A'].lifts;
+    const li = parseInt(setKey.split('-')[0]);
+    const si = parseInt(setKey.split('-')[1]);
+    const session = SESSIONS[state.currentSession || 'A'];
+    const liftKey = session.lifts[li];
+    const sets = getSetsForLift(liftKey, session.type);
+    const repsCount = sets[si]?.reps || 5;
+    setDone[setKey] = new Array(repsCount).fill(null);
+  }
+  
+  // Cycle: null -> true (done) -> false (failed) -> null (reset)
+  const current = setDone[setKey][repIdx];
+  if (current === null || current === undefined) {
+    setDone[setKey][repIdx] = true;
+    startTimer();
+  } else if (current === true) {
+    setDone[setKey][repIdx] = false;
+    stopTimer();
+  } else {
+    setDone[setKey][repIdx] = null;
+  }
+  
+  // Re-render the detail view
+  const s = state.currentSession;
+  const session = SESSIONS[s];
+  if (activeExercise !== null) {
+    renderExerciseDetail(s, session, activeExercise);
+  }
+  
+  // Auto-return to picker when all reps have been actioned
+  if (activeExercise !== null) {
+    const liftKey = session.lifts[activeExercise];
+    const sets = getSetsForLift(liftKey, session.type);
+    const checkable = sets.filter(set => state.showWarmup || set.type !== 'warmup');
+    const allActioned = checkable.every((set, si) => {
+      const realIdx = sets.indexOf(set);
+      const key = `${activeExercise}-${realIdx}`;
+      const repStatuses = setDone[key] || new Array(set.reps).fill(null);
+      return repStatuses.every(s => s === true || s === false);
+    });
+    if (allActioned) {
+      setTimeout(() => {
+        activeExercise = null;
+        renderWorkout();
+      }, 800);
+    }
+  }
 }
 
 function toggleSet(key) {
@@ -912,20 +1014,31 @@ function closeSummary() {
     const key = LIFT_KEYS[liftKey];
     const sets = getSetsForLift(liftKey, session.type);
     let missedWorkingSet = false;
+    let anyFailed = false;
+    
     sets.forEach((set, si) => {
       if (set.type === 'warmup') return; // ignore warmups
       const doneKey = `${li}-${si}`;
-      if (setDone[doneKey] !== true) missedWorkingSet = true;
+      const status = setDone[doneKey];
+      
+      // Handle both array (rep-level) and boolean (set-level) formats
+      if (Array.isArray(status)) {
+        // Rep-level: check if any rep failed
+        if (status.some(s => s === false)) anyFailed = true;
+        // Check if all reps were completed (not missed)
+        if (!status.every(s => s === true || s === false)) missedWorkingSet = true;
+      } else {
+        // Set-level: check if set wasn't completed successfully
+        if (status !== true) missedWorkingSet = true;
+        if (status === false) anyFailed = true;
+      }
     });
+    
     if (missedWorkingSet) {
       state.missedReps[key] = (state.missedReps[key] || 0) + 1;
       state.stalls[key] = (state.stalls[key] || 0) + 1;
     } else {
       // Only reset if no failures at all
-      const anyFailed = sets.some((set, si) => {
-        if (set.type === 'warmup') return false;
-        return setDone[`${li}-${si}`] === false;
-      });
       if (!anyFailed) { state.missedReps[key] = 0; state.stalls[key] = 0; }
     }
   });
