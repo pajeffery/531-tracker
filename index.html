@@ -702,8 +702,6 @@ function renderExercisePicker(s, session) {
     });
   }
 
-  const ICONS = { squat: '🏋️', bench: '🛋️', row: '🚣', ohp: '🔝', deadlift: '⬆️', squat_light: '🏋️' };
-
   let grid = '<div class="exercise-grid">';
   session.lifts.forEach((liftKey, li) => {
     const sets = getSetsForLift(liftKey, session.type);
@@ -723,7 +721,6 @@ function renderExercisePicker(s, session) {
 
     grid += `<div class="exercise-card ${isComplete ? 'complete' : ''}" onclick="openExercise(${li})">
       ${isComplete ? '<div class="exercise-check-badge">✅</div>' : ''}
-      <div class="exercise-icon">${ICONS[liftKey] || '💪'}</div>
       <div class="exercise-name">${LIFT_NAMES[liftKey]}</div>
       <div class="exercise-weight">${displayWeight}kg</div>
       <div class="exercise-progress">${doneCount}/${checkableSets.length} sets${failedCount > 0 ? ` · <span style="color:var(--danger)">${failedCount} failed</span>` : ''}</div>
