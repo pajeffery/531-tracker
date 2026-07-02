@@ -68,9 +68,12 @@
 
   .plate-display { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
   .plate { border-radius: 5px; padding: 3px 8px; font-size: 11px; font-weight: 600; }
+  .plate-large { border-radius: 6px; padding: 6px 12px; font-size: 13px; font-weight: 700; }
+  .plates-display { display: flex; align-items: center; gap: 8px; padding: 10px; background: var(--surface2); border-radius: 8px; margin-top: 8px; cursor: pointer; transition: background 0.2s; }
+  .plates-display:hover { background: var(--surface-1); }
   .p-25{background:#c0392b;color:#fff} .p-20{background:#2980b9;color:#fff} .p-15{background:#f39c12;color:#111}
   .p-10{background:#27ae60;color:#fff} .p-5{background:#8e44ad;color:#fff} .p-2{background:#555;color:#fff}
-  .p-1{background:#444;color:#fff} .p-bar{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+  .p-1{background:#444;color:#fff} .p-bar{background:var(--surface3);color:var(--muted);border:1px solid var(--border)}
 
   .rest-timer { position: fixed; top: 0; left: 0; right: 0; background: var(--surface); border-bottom: 1px solid var(--border); z-index: 200; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; transform: translateY(-100%); transition: transform 0.3s ease; }
   .rest-timer.visible { transform: translateY(0); }
@@ -527,6 +530,43 @@ function calcPlates(targetWeight) {
   return `<span class="plate p-bar">bar</span>` + result.map(p => `<span class="plate ${PLATE_CLASSES[p]||'p-2'}">${p}</span>`).join('');
 }
 
+function calcPlatesHTML(targetWeight) {
+  const bar = state.barWeight || 20;
+  if (targetWeight <= bar) return `<span class="plate-large p-bar">${bar}kg bar only</span>`;
+  let remaining = (targetWeight - bar) / 2;
+  const result = [];
+  for (const p of PLATES_KG) {
+    while (remaining >= p - 0.01) { result.push(p); remaining -= p; remaining = Math.round(remaining*1000)/1000; }
+  }
+  if (!result.length) return `<span class="plate-large p-bar">bar only</span>`;
+  const plateHTML = `<span class="plate-large p-bar">bar</span>` + result.map(p => `<span class="plate-large ${PLATE_CLASSES[p]||'p-2'}">${p}</span>`).join('');
+  return `<div class="plates-display" onclick="copyPlates(this, '${result.join(',')}')"><span style="font-size: 11px; color: var(--text-muted); margin-right: 8px;">tap to copy:</span>${plateHTML}</div>`;
+}
+
+function calcPlatesHTML(targetWeight) {
+  const bar = state.barWeight || 20;
+  if (targetWeight <= bar) return `<span class="plate-large p-bar">${bar}kg bar only</span>`;
+  let remaining = (targetWeight - bar) / 2;
+  const result = [];
+  for (const p of PLATES_KG) {
+    while (remaining >= p - 0.01) { result.push(p); remaining -= p; remaining = Math.round(remaining*1000)/1000; }
+  }
+  if (!result.length) return `<span class="plate-large p-bar">bar only</span>`;
+  const plateHTML = `<span class="plate-large p-bar">bar</span>` + result.map(p => `<span class="plate-large ${PLATE_CLASSES[p]||'p-2'}">${p}</span>`).join('');
+  return `<div class="plates-display" onclick="copyPlates(this, '${result.join(',')}')"><span style="font-size: 11px; color: var(--text-muted); margin-right: 8px;">tap to copy:</span>${plateHTML}</div>`;
+}
+
+function copyPlates(el, plateStr) {
+  const plates = plateStr.split(',').filter(Boolean);
+  const text = plates.length > 0 ? plates.join(' + ') + ' per side' : 'bar only';
+  navigator.clipboard.writeText(text).then(() => {
+    showToast(`Copied: ${text}`, 'success');
+  }).catch(e => {
+    console.error('Copy failed:', e);
+    showToast('Copy failed', 'error');
+  });
+}
+
 function getSetsForLift(liftKey, sessionType) {
   const key = LIFT_KEYS[liftKey];
   const isDeloading = state.deloadActive;
@@ -763,6 +803,17 @@ function renderExerciseDetail(s, session, li) {
   let rowsHTML = '';
   let workSetCounter = 0;
   let lastWorkSetIdx = -1; // Track the last work set
+  let completedWorkSets = 0;
+  let totalWorkSets = 0;
+  
+  // First pass: count work sets
+  sets.forEach((set, si) => {
+    if (!state.showWarmup && set.type === 'warmup') return;
+    if (set.type !== 'warmup') {
+      totalWorkSets++;
+      if (setDone[`${li}-${si}`]) completedWorkSets++;
+    }
+  });
   
   // Find which sets are visible (not warmup if showWarmup is false)
   const visibleSets = sets.map((set, si) => {
@@ -811,7 +862,7 @@ function renderExerciseDetail(s, session, li) {
           <span class="big-set-unit">kg</span>
           <span class="big-set-reps">× ${set.reps}</span>
         </div>
-        <div class="big-plate-display">${calcPlates(set.weight)}</div>
+        <div class="big-plate-display">${calcPlatesHTML(set.weight)}</div>
       </div>
       <div class="big-check ${setDone[key] === true ? 'done' : setDone[key] === false ? 'failed' : ''}" id="check-${key}"></div>
     </div>`;
@@ -824,6 +875,18 @@ function renderExerciseDetail(s, session, li) {
         <div class="detail-title">${LIFT_NAMES[liftKey]}</div>
         <div class="detail-subtitle">${displayWeight}kg work set</div>
       </div>
+    </div>
+    <div style="margin-bottom: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-size: 13px; font-weight: 600; color: var(--text-primary);">Progress</span>
+        <span style="font-size: 13px; color: var(--text-muted);">${completedWorkSets} of ${totalWorkSets} sets</span>
+      </div>
+      <div style="width: 100%; height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden;">
+        <div style="width: ${totalWorkSets > 0 ? Math.round((completedWorkSets / totalWorkSets) * 100) : 0}%; height: 100%; background: var(--success); transition: width 0.3s ease;"></div>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px;padding:12px;background:var(--surface2);border-radius:8px">
+      <strong>Mark sets in order:</strong> ✓ (done) → ✗ (failed) → reset. Sets unlock as you go.
     </div>
     ${rowsHTML}
   `;
