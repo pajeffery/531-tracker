@@ -326,12 +326,6 @@
       </div>
       <div class="divider"></div>
       <div style="margin-bottom:12px">
-        <label style="display:flex;align-items:center;gap:10px;font-size:14px;cursor:pointer">
-          <input type="checkbox" id="show-warmup" checked style="width:18px;height:18px;accent-color:var(--accent)">
-          Show warm-up sets
-        </label>
-      </div>
-      <div style="margin-bottom:4px">
         <p style="font-size:13px;color:var(--muted);margin-bottom:8px">Round weights to nearest:</p>
         <div style="display:flex;gap:8px">
           <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;cursor:pointer;font-size:14px">
@@ -577,26 +571,26 @@ function getSetsForLift(liftKey, sessionType) {
   const baseWeight = isLight ? lightWeight : workWeight;
 
   const warmupSets = WARMUP_PCTS.map(pct => ({
-    weight: rWork(baseWeight * pct), reps: 5, type: 'warmup', pct: Math.round(pct*100)
+    weight: rWork(baseWeight * pct), reps: 5, type: 'work', pct: Math.round(pct*100), label: `${Math.round(pct*100)}%`
   }));
 
   if (isLight) {
-    // Light squat: just warmups + 1x5 at 80%
-    return [...warmupSets, { weight: rWork(lightWeight), reps: 5, type: 'work', pct: 80 }];
+    // Light squat: warmups + 1x5 at 80%
+    return [...warmupSets, { weight: rWork(lightWeight), reps: 5, type: 'work', pct: 80, label: '80% (5 reps)' }];
   }
 
   if (sessionType === 'heavy') {
     // Heavy: warmups + 5, 3, 8
     return [
       ...warmupSets,
-      { weight: rWork(workWeight),        reps: 5, type: 'work',  pct: 100, label: '5 reps'  },
-      { weight: rWork(workWeight * 1.05), reps: 3, type: 'heavy', pct: 105, label: '3 reps'  },
-      { weight: rWork(workWeight * 0.90), reps: 8, type: 'back',  pct: 90,  label: '8 reps'  },
+      { weight: rWork(workWeight),        reps: 5, type: 'work',  pct: 100, label: '100% (5 reps)'  },
+      { weight: rWork(workWeight * 1.05), reps: 3, type: 'heavy', pct: 105, label: '105% (3 reps)'  },
+      { weight: rWork(workWeight * 0.90), reps: 8, type: 'back',  pct: 90,  label: '90% (8 reps)'   },
     ];
   }
 
   // Normal: warmups + 1x5
-  return [...warmupSets, { weight: rWork(workWeight), reps: 5, type: 'work', pct: 100 }];
+  return [...warmupSets, { weight: rWork(workWeight), reps: 5, type: 'work', pct: 100, label: '100% (5 reps)' }];
 }
 
 // ── TOAST & TIMER ─────────────────────────────────────────────────
@@ -1279,7 +1273,6 @@ function renderSettings() {
     </div>`).join('');
 
   document.getElementById('bar-weight').value = state.barWeight || 20;
-  document.getElementById('show-warmup').checked = state.showWarmup !== false;
   document.querySelectorAll('input[name="rounding"]').forEach(r => { r.checked = parseFloat(r.value) === (state.rounding||1.25); });
   document.querySelectorAll('input[name="rest"]').forEach(r => { r.checked = parseInt(r.value) === (state.restSeconds||180); });
   updateSheetsUI();
@@ -1302,7 +1295,6 @@ function setWeight(key, val) {
 
 function saveSettings() {
   state.barWeight  = parseFloat(document.getElementById('bar-weight').value) || 20;
-  state.showWarmup = document.getElementById('show-warmup').checked;
   const rEl = document.querySelector('input[name="rounding"]:checked');
   state.rounding = rEl ? parseFloat(rEl.value) : 2.5;
   const restEl = document.querySelector('input[name="rest"]:checked');
