@@ -773,7 +773,7 @@ function renderExerciseDetail(s, session, li) {
     if (isWarmup) { setLabel = 'Warm-up'; }
     else { workSetCounter++; setLabel = set.type === 'heavy' ? 'Heavy' : set.type === 'back' ? 'Back-off' : `Set ${workSetCounter}`; }
 
-    rowsHTML += `<div class="big-set-row ${checked ? 'set-done' : ''} ${isWarmup ? 'set-warmup' : ''}" onclick="toggleSet('${key}')">
+    rowsHTML += `<div class="big-set-row ${setDone[key] === true ? 'set-done' : ''} ${isWarmup ? 'set-warmup' : ''}" onclick="toggleSet('${key}')">
       <div class="big-set-num">${setLabel}</div>
       <div class="big-set-info">
         <div class="big-set-weight-row">
