@@ -735,7 +735,9 @@ function renderExercisePicker(s, session) {
     const checkableSets = sets.filter(set => state.showWarmup || set.type !== 'warmup');
     return checkableSets.every((set, si) => {
       const realIdx = sets.indexOf(set);
-      return setDone[`${li}-${realIdx}`];
+      const status = setDone[`${li}-${realIdx}`];
+      // Allow done (true) or failed (false), but not undefined/null (not attempted)
+      return status === true || status === false;
     });
   });
 
