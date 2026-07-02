@@ -205,6 +205,7 @@
   .big-check.failed { background: var(--danger); border-color: var(--danger); transform: scale(1.1); }
   .big-check.failed::after { content: '✗'; color: #fff; font-size: 18px; font-weight: 900; }
   .big-set-row.set-failed { background: rgba(255,79,79,0.08); border-color: rgba(255,79,79,0.3); }
+  .big-set-row.disabled { pointer-events: none; }
   .big-set-row.set-warmup .big-check { width: 28px; height: 28px; }
 
   @keyframes pulseCheck { 0% { transform: scale(1); } 50% { transform: scale(1.25); } 100% { transform: scale(1.1); } }
@@ -764,6 +765,14 @@ function renderExerciseDetail(s, session, li) {
 
   let rowsHTML = '';
   let workSetCounter = 0;
+  let lastWorkSetIdx = -1; // Track the last work set
+  
+  // Find which sets are visible (not warmup if showWarmup is false)
+  const visibleSets = sets.map((set, si) => {
+    if (!state.showWarmup && set.type === 'warmup') return null;
+    return { set, si };
+  }).filter(Boolean);
+
   sets.forEach((set, si) => {
     if (!state.showWarmup && set.type === 'warmup') return;
 
@@ -774,7 +783,28 @@ function renderExerciseDetail(s, session, li) {
     if (isWarmup) { setLabel = 'Warm-up'; }
     else { workSetCounter++; setLabel = set.type === 'heavy' ? 'Heavy' : set.type === 'back' ? 'Back-off' : `Set ${workSetCounter}`; }
 
-    rowsHTML += `<div class="big-set-row ${setDone[key] === true ? 'set-done' : ''} ${isWarmup ? 'set-warmup' : ''}" onclick="toggleSet('${key}')">
+    // Progressive unlock: disable sets until previous work set is marked
+    let isDisabled = false;
+    if (!isWarmup && lastWorkSetIdx >= 0) {
+      // Check if all previous work sets have a status
+      for (let i = 0; i < si; i++) {
+        const prevSet = sets[i];
+        if (prevSet.type !== 'warmup' || state.showWarmup) {
+          const prevKey = `${li}-${i}`;
+          const prevStatus = setDone[prevKey];
+          if (prevStatus === undefined || prevStatus === null) {
+            isDisabled = true;
+            break;
+          }
+        }
+      }
+    }
+    if (!isWarmup) lastWorkSetIdx = si;
+
+    const disabledStyle = isDisabled ? 'opacity: 0.5; cursor: not-allowed;' : 'cursor: pointer;';
+    const clickHandler = isDisabled ? '' : `toggleSet('${key}')`;
+
+    rowsHTML += `<div class="big-set-row ${setDone[key] === true ? 'set-done' : ''} ${isWarmup ? 'set-warmup' : ''} ${isDisabled ? 'disabled' : ''}" onclick="${clickHandler}" style="${disabledStyle}">
       <div class="big-set-num">${setLabel}</div>
       <div class="big-set-info">
         <div class="big-set-weight-row">
@@ -797,7 +827,7 @@ function renderExerciseDetail(s, session, li) {
       </div>
     </div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:16px;padding:12px;background:var(--surface2);border-radius:8px">
-      <strong>Tap a set to mark:</strong> ✓ (done) → ✗ (failed) → reset
+      <strong>Mark sets in order:</strong> ✓ (done) → ✗ (failed) → reset. Sets unlock as you go.
     </div>
     ${rowsHTML}
   `;
