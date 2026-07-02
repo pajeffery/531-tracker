@@ -794,6 +794,9 @@ function renderExerciseDetail(s, session, li) {
         <div class="detail-subtitle">${displayWeight}kg work set</div>
       </div>
     </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px;padding:12px;background:var(--surface2);border-radius:8px">
+      <strong>Tap a set to mark:</strong> ✓ (done) → ✗ (failed) → reset
+    </div>
     ${rowsHTML}
   `;
 }
@@ -983,7 +986,11 @@ function logSession(sessionKey) {
 
 function undoSession(id) {
   const idx = state.sessions.findIndex(s => s.id === id || s.id === +id);
-  if (idx === -1) return;
+  if (idx === -1) {
+    console.error('Session not found:', id);
+    showToast('Could not find session to undo', 'error');
+    return;
+  }
   const sess = state.sessions[idx];
 
   // Reverse weight increment if it was a C session
@@ -994,10 +1001,17 @@ function undoSession(id) {
     });
   }
 
+  // Also remove from Google Sheets if synced
+  if (state.google.connected && state.google.spreadsheetId && sess.id) {
+    deleteSessionFromSheet(sess.id).catch(e => console.error('Failed to remove from sheets:', e));
+  }
+
   state.sessions.splice(idx, 1);
   state.totalSessions = Math.max(0, state.totalSessions - 1);
   state.currentSession = sess.session;
+  setDone = {};
   save();
+  showToast(`Session ${sess.session} undone ✓`, 'success');
   renderWorkout();
 }
 
@@ -1455,6 +1469,17 @@ async function appendSessionToSheet(session) {
     );
     await writeStateToSheet();
   } catch(e) { console.error(e); showToast('Sheet sync failed', 'error'); }
+}
+
+async function syncStateToSheet() {
+  await writeStateToSheet();
+}
+
+async function deleteSessionFromSheet(sessionId) {
+  if (!state.google.token || !state.google.spreadsheetId) return;
+  // Note: Deleting rows from Sheets is complex; for now we just sync the updated state
+  // The session is removed from state.sessions and that will be reflected on next write
+  await writeStateToSheet();
 }
 
 // ── CALENDAR ─────────────────────────────────────────────────────
