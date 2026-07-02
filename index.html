@@ -649,7 +649,6 @@ function renderWorkout() {
   const navRow = document.getElementById('session-nav-row');
 
   // Check if already logged today
-  const today = new Date().toDateString();
   const alreadyDone = state.sessions.find(sess => new Date(sess.date).toDateString() === today);
   const content = document.getElementById('workout-content');
 
@@ -1012,11 +1011,6 @@ function setChartLift(lift, btn) {
 
 function renderProgress() {
   // Build chart data from session history
-  const relevantSessions = state.sessions.slice().reverse().filter(s => {
-    return Object.values(s.lifts).some(l => LIFT_KEYS[Object.keys(s.lifts).find(k => LIFT_KEYS[k] === chartLift)] === chartLift
-      || s.weights[chartLift]);
-  });
-
   // Only show sessions where this lift actually appeared
   const liftSessions = {'squat': ['A','C'], 'bench': ['A','C'], 'row': ['A','C'], 'ohp': ['B'], 'deadlift': ['B']};
   const relevantSessions = liftSessions[chartLift] || ['A','B','C'];
