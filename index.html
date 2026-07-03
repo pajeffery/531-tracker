@@ -406,6 +406,19 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="deload-modal">
+  <div class="modal">
+    <div style="font-size:36px;margin-bottom:8px">💪</div>
+    <div class="modal-title" id="deload-title">Deload Recommended</div>
+    <div class="modal-subtitle" id="deload-subtitle"></div>
+    <div id="deload-details" style="font-size:13px;color:var(--text-muted);margin:16px 0;text-align:left;background:var(--surface2);padding:12px;border-radius:8px"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-secondary" onclick="declineDeload()" style="flex:1">Skip for now</button>
+      <button class="btn btn-primary" onclick="acceptDeload()" style="flex:1">Accept</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://accounts.google.com/gsi/client" async></script>
 <script>
 // ── CONFIG ────────────────────────────────────────────────────────
@@ -1050,7 +1063,92 @@ function logSession(sessionKey) {
   stopTimer();
 
   if (state.google.connected && state.google.spreadsheetId) appendSessionToSheet(sessionLog);
+  
+  // Check for deload recommendations
+  checkDeloadRecommendation();
+  
   renderWorkout();
+}
+
+function checkDeloadRecommendation() {
+  // Check for per-exercise deloads (2+ consecutive failures)
+  const liftsThatNeedDeload = [];
+  Object.keys(state.missedReps).forEach(key => {
+    const missedCount = state.missedReps[key] || 0;
+    if (missedCount >= 2) {
+      liftsThatNeedDeload.push(key);
+    }
+  });
+  
+  if (liftsThatNeedDeload.length > 0) {
+    showDeloadModal(liftsThatNeedDeload, 'failed');
+    return;
+  }
+  
+  // Check for scheduled deload (every 3 cycles = 9 weeks)
+  if (state.totalSessions % 9 === 0 && state.totalSessions > 0) {
+    showDeloadModal(Object.keys(state.weights), 'scheduled');
+  }
+}
+
+function showDeloadModal(liftsToDeload, type) {
+  state.pendingDeload = { lifts: liftsToDeload, type: type };
+  
+  const modal = document.getElementById('deload-modal');
+  const title = document.getElementById('deload-title');
+  const subtitle = document.getElementById('deload-subtitle');
+  const details = document.getElementById('deload-details');
+  
+  if (type === 'failed') {
+    const liftNames = liftsToDeload.map(k => LIFT_NAMES[k]).join(', ');
+    title.textContent = 'Deload Recommended';
+    subtitle.textContent = `${liftNames} needs recovery`;
+    details.innerHTML = `<strong>Why:</strong> ${liftNames} had 2+ failed sessions.<br><br><strong>What happens:</strong> These lifts will drop 10% for one session, then resume normal progression.`;
+  } else {
+    title.textContent = 'Scheduled Deload Time';
+    subtitle.textContent = 'You\'ve completed 3 cycles';
+    details.innerHTML = `<strong>Why:</strong> Regular deloads prevent overtraining and CNS fatigue.<br><br><strong>What happens:</strong> All lifts drop 10% for one session, then resume normal progression.`;
+  }
+  
+  modal.classList.add('visible');
+}
+
+function acceptDeload() {
+  if (!state.pendingDeload) return;
+  
+  const { lifts, type } = state.pendingDeload;
+  
+  // Apply 10% reduction
+  lifts.forEach(key => {
+    state.weights[key] = +(state.weights[key] * 0.9).toFixed(2);
+  });
+  
+  state.deloadActive = true;
+  state.deloadLifts = lifts;
+  state.deloadType = type;
+  
+  // Reset missed reps for these lifts
+  lifts.forEach(key => {
+    state.missedReps[key] = 0;
+    state.stalls[key] = 0;
+  });
+  
+  save();
+  
+  const message = type === 'failed' ? 
+    `${lifts.map(k => LIFT_NAMES[k]).join(', ')} deloaded 10%` :
+    'All lifts deloaded 10%';
+  showToast(`${message} — recover well! 💪`, 'success');
+  
+  document.getElementById('deload-modal').classList.remove('visible');
+  state.pendingDeload = null;
+  renderWorkout();
+}
+
+function declineDeload() {
+  document.getElementById('deload-modal').classList.remove('visible');
+  state.pendingDeload = null;
+  showToast('Deload declined — keep pushing! 💪', 'info');
 }
 
 function undoSession(id) {
