@@ -501,7 +501,6 @@ let timerInterval = null;
 let timerRemaining = 0;
 let chartLift = 'squat';
 let googleTokenClient = null;
-let fullscreenMode = false;
 
 // ── UTILS ─────────────────────────────────────────────────────────
 function roundWeight(val, nearest) { return Math.round(val / nearest) * nearest; }
@@ -548,23 +547,6 @@ function copyPlates(el, plateStr) {
     console.error('Copy failed:', e);
     showToast('Copy failed', 'error');
   });
-}
-
-function toggleFullscreen() {
-  fullscreenMode = !fullscreenMode;
-  const header = document.querySelector('.detail-header');
-  const progress = document.querySelector('[style*="margin-bottom: 8px"]');
-  const content = document.getElementById('workout-content');
-  
-  if (fullscreenMode) {
-    if (header) header.style.display = 'none';
-    if (progress) progress.style.display = 'none';
-    if (content) content.style.maxHeight = '100vh';
-  } else {
-    if (header) header.style.display = '';
-    if (progress) progress.style.display = '';
-    if (content) content.style.maxHeight = '';
-  }
 }
 
 function getSetsForLift(liftKey, sessionType) {
@@ -874,7 +856,6 @@ function renderExerciseDetail(s, session, li) {
         <div class="detail-title">${LIFT_NAMES[liftKey]}</div>
         <div class="detail-subtitle">${displayWeight}kg</div>
       </div>
-      <button class="back-btn" onclick="toggleFullscreen()" style="margin-left: auto;">⛶</button>
     </div>
     <div style="margin-bottom: 8px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
