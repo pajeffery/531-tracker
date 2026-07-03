@@ -534,21 +534,9 @@ function calcPlatesHTML(targetWeight) {
   }
   if (!result.length) return `<span class="plate-large p-bar">bar only</span>`;
   const plateHTML = `<span class="plate-large p-bar">bar</span>` + result.map(p => `<span class="plate-large ${PLATE_CLASSES[p]||'p-2'}">${p}</span>`).join('');
-  return `<div class="plates-display" onclick="copyPlates(this, '${result.join(',')}')"><span style="font-size: 11px; color: var(--text-muted); margin-right: 8px;">tap to copy:</span>${plateHTML}</div>`;
+  return `<div class="plates-display" onclick="copyPlates(this, '${result.join(',')}')">${plateHTML}</div>`;
 }
 
-function calcPlatesHTML(targetWeight) {
-  const bar = state.barWeight || 20;
-  if (targetWeight <= bar) return `<span class="plate-large p-bar">${bar}kg bar only</span>`;
-  let remaining = (targetWeight - bar) / 2;
-  const result = [];
-  for (const p of PLATES_KG) {
-    while (remaining >= p - 0.01) { result.push(p); remaining -= p; remaining = Math.round(remaining*1000)/1000; }
-  }
-  if (!result.length) return `<span class="plate-large p-bar">bar only</span>`;
-  const plateHTML = `<span class="plate-large p-bar">bar</span>` + result.map(p => `<span class="plate-large ${PLATE_CLASSES[p]||'p-2'}">${p}</span>`).join('');
-  return `<div class="plates-display" onclick="copyPlates(this, '${result.join(',')}')"><span style="font-size: 11px; color: var(--text-muted); margin-right: 8px;">tap to copy:</span>${plateHTML}</div>`;
-}
 
 function copyPlates(el, plateStr) {
   const plates = plateStr.split(',').filter(Boolean);
@@ -849,7 +837,6 @@ function renderExerciseDetail(s, session, li) {
     const clickHandler = isDisabled ? '' : `toggleSet('${key}')`;
 
     rowsHTML += `<div class="big-set-row ${setDone[key] === true ? 'set-done' : ''} ${isWarmup ? 'set-warmup' : ''} ${isDisabled ? 'disabled' : ''}" onclick="${clickHandler}" style="${disabledStyle}">
-      <div class="big-set-num">${setLabel}</div>
       <div class="big-set-info">
         <div class="big-set-weight-row">
           <span class="big-set-weight">${set.weight}</span>
@@ -878,9 +865,6 @@ function renderExerciseDetail(s, session, li) {
       <div style="width: 100%; height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden;">
         <div style="width: ${totalWorkSets > 0 ? Math.round((completedWorkSets / totalWorkSets) * 100) : 0}%; height: 100%; background: var(--success); transition: width 0.3s ease;"></div>
       </div>
-    </div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:16px;padding:12px;background:var(--surface2);border-radius:8px">
-      <strong>Mark sets in order:</strong> ✓ (done) → ✗ (failed) → reset. Sets unlock as you go.
     </div>
     ${rowsHTML}
   `;
