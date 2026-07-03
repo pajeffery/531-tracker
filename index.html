@@ -190,7 +190,7 @@
   .detail-subtitle { font-size: 13px; color: var(--muted); margin-top: 2px; }
 
   /* BIG TAP SET ROWS */
-  .big-set-row { display: flex; align-items: center; gap: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; cursor: pointer; transition: all 0.15s; }
+  .big-set-row { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s; }
   .big-set-row:active { transform: scale(0.98); }
   .big-set-row.set-done { background: rgba(71,232,160,0.1); border-color: rgba(71,232,160,0.4); }
   .big-set-row.set-warmup { opacity: 0.65; padding: 12px 16px; }
@@ -501,6 +501,7 @@ let timerInterval = null;
 let timerRemaining = 0;
 let chartLift = 'squat';
 let googleTokenClient = null;
+let fullscreenMode = false;
 
 // ── UTILS ─────────────────────────────────────────────────────────
 function roundWeight(val, nearest) { return Math.round(val / nearest) * nearest; }
@@ -547,6 +548,23 @@ function copyPlates(el, plateStr) {
     console.error('Copy failed:', e);
     showToast('Copy failed', 'error');
   });
+}
+
+function toggleFullscreen() {
+  fullscreenMode = !fullscreenMode;
+  const header = document.querySelector('.detail-header');
+  const progress = document.querySelector('[style*="margin-bottom: 8px"]');
+  const content = document.getElementById('workout-content');
+  
+  if (fullscreenMode) {
+    if (header) header.style.display = 'none';
+    if (progress) progress.style.display = 'none';
+    if (content) content.style.maxHeight = '100vh';
+  } else {
+    if (header) header.style.display = '';
+    if (progress) progress.style.display = '';
+    if (content) content.style.maxHeight = '';
+  }
 }
 
 function getSetsForLift(liftKey, sessionType) {
@@ -854,15 +872,15 @@ function renderExerciseDetail(s, session, li) {
       <button class="back-btn" onclick="closeExercise()">←</button>
       <div>
         <div class="detail-title">${LIFT_NAMES[liftKey]}</div>
-        <div class="detail-subtitle">${displayWeight}kg work set</div>
+        <div class="detail-subtitle">${displayWeight}kg</div>
       </div>
+      <button class="back-btn" onclick="toggleFullscreen()" style="margin-left: auto;">⛶</button>
     </div>
-    <div style="margin-bottom: 16px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <span style="font-size: 13px; font-weight: 600; color: var(--text-primary);">Progress</span>
-        <span style="font-size: 13px; color: var(--text-muted);">${completedWorkSets} of ${totalWorkSets} sets</span>
+    <div style="margin-bottom: 8px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+        <span style="font-size: 12px; color: var(--text-muted);">${completedWorkSets}/${totalWorkSets}</span>
       </div>
-      <div style="width: 100%; height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden;">
+      <div style="width: 100%; height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden;">
         <div style="width: ${totalWorkSets > 0 ? Math.round((completedWorkSets / totalWorkSets) * 100) : 0}%; height: 100%; background: var(--success); transition: width 0.3s ease;"></div>
       </div>
     </div>
@@ -1019,7 +1037,8 @@ function logSession(sessionKey) {
     week: state.week,
     date: new Date().toISOString(),
     lifts: loggedLifts,
-    weights: { ...state.weights }
+    weights: { ...state.weights },
+    setDone: { ...setDone }
   };
 
   state.sessions.unshift(sessionLog);
@@ -1078,9 +1097,9 @@ function undoSession(id) {
   state.sessions.splice(idx, 1);
   state.totalSessions = Math.max(0, state.totalSessions - 1);
   state.currentSession = sess.session;
-  setDone = {};
+  setDone = sess.setDone ? { ...sess.setDone } : {};
   save();
-  showToast(`Session ${sess.session} undone ✓`, 'success');
+  showToast(`Session ${sess.session} restored — edit and re-log ✓`, 'success');
   renderWorkout();
 }
 
