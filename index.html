@@ -68,9 +68,12 @@
 
   .plate-display { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
   .plate { border-radius: 5px; padding: 3px 8px; font-size: 11px; font-weight: 600; }
+  .plate-large { border-radius: 6px; padding: 6px 12px; font-size: 13px; font-weight: 700; }
+  .plates-display { display: flex; align-items: center; gap: 8px; padding: 10px; background: var(--surface2); border-radius: 8px; margin-top: 8px; cursor: pointer; transition: background 0.2s; }
+  .plates-display:hover { background: var(--surface-1); }
   .p-25{background:#c0392b;color:#fff} .p-20{background:#2980b9;color:#fff} .p-15{background:#f39c12;color:#111}
   .p-10{background:#27ae60;color:#fff} .p-5{background:#8e44ad;color:#fff} .p-2{background:#555;color:#fff}
-  .p-1{background:#444;color:#fff} .p-bar{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+  .p-1{background:#444;color:#fff} .p-bar{background:var(--surface3);color:var(--muted);border:1px solid var(--border)}
 
   .rest-timer { position: fixed; top: 0; left: 0; right: 0; background: var(--surface); border-bottom: 1px solid var(--border); z-index: 200; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; transform: translateY(-100%); transition: transform 0.3s ease; }
   .rest-timer.visible { transform: translateY(0); }
@@ -168,6 +171,48 @@
   .stat-card { background: var(--surface2); border-radius: var(--radius); padding: 14px; }
   .stat-val { font-size: 24px; font-weight: 700; color: var(--accent); }
   .stat-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* EXERCISE PICKER */
+  .exercise-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .exercise-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 14px; cursor: pointer; transition: all 0.15s; text-align: center; position: relative; }
+  .exercise-card:active { transform: scale(0.97); }
+  .exercise-card.complete { border-color: var(--success); background: rgba(71,232,160,0.08); }
+  .exercise-icon { font-size: 36px; margin-bottom: 10px; }
+  .exercise-name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .exercise-weight { font-size: 13px; color: var(--muted); }
+  .exercise-progress { font-size: 11px; color: var(--muted); margin-top: 6px; }
+  .exercise-check-badge { position: absolute; top: 10px; right: 10px; font-size: 18px; }
+
+  /* DETAIL VIEW */
+  .detail-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .back-btn { width: 40px; height: 40px; border-radius: 10px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .detail-title { font-size: 22px; font-weight: 700; }
+  .detail-subtitle { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+  /* BIG TAP SET ROWS */
+  .big-set-row { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s; }
+  .big-set-row:active { transform: scale(0.98); }
+  .big-set-row.set-done { background: rgba(71,232,160,0.1); border-color: rgba(71,232,160,0.4); }
+  .big-set-row.set-warmup { opacity: 0.65; padding: 12px 16px; }
+  .big-set-num { font-size: 13px; color: var(--muted); width: 28px; flex-shrink: 0; font-weight: 600; }
+  .big-set-info { flex: 1; min-width: 0; }
+  .big-set-weight-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; }
+  .big-set-weight { font-size: 22px; font-weight: 700; }
+  .big-set-unit { font-size: 13px; color: var(--muted); }
+  .big-set-reps { font-size: 13px; color: var(--muted); font-weight: 500; }
+  .big-set-row.set-warmup .big-set-weight { font-size: 17px; }
+  .big-plate-display { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+  .big-check { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
+  .big-check.done { background: var(--success); border-color: var(--success); transform: scale(1.1); }
+  .big-check.done::after { content: '✓'; color: #111; font-size: 18px; font-weight: 900; }
+  .big-check.failed { background: var(--danger); border-color: var(--danger); transform: scale(1.1); }
+  .big-check.failed::after { content: '✗'; color: #fff; font-size: 18px; font-weight: 900; }
+  .big-set-row.set-failed { background: rgba(255,79,79,0.08); border-color: rgba(255,79,79,0.3); }
+  .big-set-row.disabled { pointer-events: none; }
+  .big-set-row.set-warmup .big-check { width: 28px; height: 28px; }
+
+  @keyframes pulseCheck { 0% { transform: scale(1); } 50% { transform: scale(1.25); } 100% { transform: scale(1.1); } }
+  .big-check.done.just-checked { animation: pulseCheck 0.3s ease; }
 </style>
 </head>
 <body>
@@ -198,7 +243,7 @@
     <div>Week <span id="week-num">1</span></div>
     <div>Session <span id="session-num">1</span> of all time</div>
   </div>
-  <div class="session-nav">
+  <div class="session-nav" id="session-nav-row" style="display:none">
     <button class="session-nav-btn" id="nav-a" onclick="switchSession('A')">Session A</button>
     <button class="session-nav-btn" id="nav-b" onclick="switchSession('B')">Session B</button>
     <button class="session-nav-btn" id="nav-c" onclick="switchSession('C')">Session C</button>
@@ -281,12 +326,6 @@
       </div>
       <div class="divider"></div>
       <div style="margin-bottom:12px">
-        <label style="display:flex;align-items:center;gap:10px;font-size:14px;cursor:pointer">
-          <input type="checkbox" id="show-warmup" checked style="width:18px;height:18px;accent-color:var(--accent)">
-          Show warm-up sets
-        </label>
-      </div>
-      <div style="margin-bottom:4px">
         <p style="font-size:13px;color:var(--muted);margin-bottom:8px">Round weights to nearest:</p>
         <div style="display:flex;gap:8px">
           <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;cursor:pointer;font-size:14px">
@@ -367,6 +406,19 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="deload-modal">
+  <div class="modal">
+    <div style="font-size:36px;margin-bottom:8px">💪</div>
+    <div class="modal-title" id="deload-title">Deload Recommended</div>
+    <div class="modal-subtitle" id="deload-subtitle"></div>
+    <div id="deload-details" style="font-size:13px;color:var(--text-muted);margin:16px 0;text-align:left;background:var(--surface2);padding:12px;border-radius:8px"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-secondary" onclick="declineDeload()" style="flex:1">Skip for now</button>
+      <button class="btn btn-primary" onclick="acceptDeload()" style="flex:1">Accept</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://accounts.google.com/gsi/client" async></script>
 <script>
 // ── CONFIG ────────────────────────────────────────────────────────
@@ -433,7 +485,7 @@ function defaultState() {
     slowProgressCycles: { squat: 0, bench: 0, row: 0, ohp: 0, deadlift: 0 },
     lastIncrementCycle: { squat: 0, bench: 0, row: 0, ohp: 0, deadlift: 0 },
     barWeight: 20,
-    rounding: 2.5,
+    rounding: 1.25, // smallest plate size; minimum bar increment = rounding × 2
     showWarmup: true,
     restSeconds: 180,
     sessions: [],
@@ -457,6 +509,7 @@ let state = loadState();
 let setDone = {};
 let workoutStartTime = null;
 let finishBtnAdded = false;
+let activeExercise = null;
 let timerInterval = null;
 let timerRemaining = 0;
 let chartLift = 'squat';
@@ -465,6 +518,8 @@ let googleTokenClient = null;
 // ── UTILS ─────────────────────────────────────────────────────────
 function roundWeight(val, nearest) { return Math.round(val / nearest) * nearest; }
 function r(w) { return roundWeight(w, state.rounding || 2.5); }
+// Work set weights must always be multiples of smallest plate × 2 (minimum loadable increment)
+function rWork(w) { return roundWeight(w, (state.rounding || 1.25) * 2); }
 function unitLabel() { return 'kg'; }
 
 const PLATES_KG = [25, 20, 15, 10, 5, 2.5, 1.25];
@@ -479,7 +534,32 @@ function calcPlates(targetWeight) {
     while (remaining >= p - 0.01) { result.push(p); remaining -= p; remaining = Math.round(remaining*1000)/1000; }
   }
   if (!result.length) return `<span class="plate p-bar">bar only</span>`;
-  return `<span class="plate p-bar">bar</span>` + result.map(p => `<span class="plate ${PLATE_CLASSES[p]||'p-2'}">${p}</span>`).join('') + `<span style="font-size:10px;color:var(--muted);margin-left:3px">each side</span>`;
+  return `<span class="plate p-bar">bar</span>` + result.map(p => `<span class="plate ${PLATE_CLASSES[p]||'p-2'}">${p}</span>`).join('');
+}
+
+function calcPlatesHTML(targetWeight) {
+  const bar = state.barWeight || 20;
+  if (targetWeight <= bar) return `<span class="plate-large p-bar">${bar}kg bar only</span>`;
+  let remaining = (targetWeight - bar) / 2;
+  const result = [];
+  for (const p of PLATES_KG) {
+    while (remaining >= p - 0.01) { result.push(p); remaining -= p; remaining = Math.round(remaining*1000)/1000; }
+  }
+  if (!result.length) return `<span class="plate-large p-bar">bar only</span>`;
+  const plateHTML = `<span class="plate-large p-bar">bar</span>` + result.map(p => `<span class="plate-large ${PLATE_CLASSES[p]||'p-2'}">${p}</span>`).join('');
+  return `<div class="plates-display" onclick="copyPlates(this, '${result.join(',')}')">${plateHTML}</div>`;
+}
+
+
+function copyPlates(el, plateStr) {
+  const plates = plateStr.split(',').filter(Boolean);
+  const text = plates.length > 0 ? plates.join(' + ') + ' per side' : 'bar only';
+  navigator.clipboard.writeText(text).then(() => {
+    showToast(`Copied: ${text}`, 'success');
+  }).catch(e => {
+    console.error('Copy failed:', e);
+    showToast('Copy failed', 'error');
+  });
 }
 
 function getSetsForLift(liftKey, sessionType) {
@@ -492,26 +572,26 @@ function getSetsForLift(liftKey, sessionType) {
   const baseWeight = isLight ? lightWeight : workWeight;
 
   const warmupSets = WARMUP_PCTS.map(pct => ({
-    weight: r(baseWeight * pct), reps: 5, type: 'warmup', pct: Math.round(pct*100)
+    weight: rWork(baseWeight * pct), reps: 5, type: 'work', pct: Math.round(pct*100), label: `${Math.round(pct*100)}%`
   }));
 
   if (isLight) {
-    // Light squat: just warmups + 1x5 at 80%
-    return [...warmupSets, { weight: lightWeight, reps: 5, type: 'work', pct: 80 }];
+    // Light squat: warmups + 1x5 at 80%
+    return [...warmupSets, { weight: rWork(lightWeight), reps: 5, type: 'work', pct: 80, label: '80% (5 reps)' }];
   }
 
   if (sessionType === 'heavy') {
     // Heavy: warmups + 5, 3, 8
     return [
       ...warmupSets,
-      { weight: r(workWeight),        reps: 5, type: 'work',  pct: 100, label: '5 reps'  },
-      { weight: r(workWeight * 1.05), reps: 3, type: 'heavy', pct: 105, label: '3 reps'  },
-      { weight: r(workWeight * 0.90), reps: 8, type: 'back',  pct: 90,  label: '8 reps'  },
+      { weight: rWork(workWeight),        reps: 5, type: 'work',  pct: 100, label: '100% (5 reps)'  },
+      { weight: rWork(workWeight * 1.05), reps: 3, type: 'heavy', pct: 105, label: '105% (3 reps)'  },
+      { weight: rWork(workWeight * 0.90), reps: 8, type: 'back',  pct: 90,  label: '90% (8 reps)'   },
     ];
   }
 
   // Normal: warmups + 1x5
-  return [...warmupSets, { weight: workWeight, reps: 5, type: 'work', pct: 100 }];
+  return [...warmupSets, { weight: rWork(workWeight), reps: 5, type: 'work', pct: 100, label: '100% (5 reps)' }];
 }
 
 // ── TOAST & TIMER ─────────────────────────────────────────────────
@@ -567,11 +647,26 @@ function switchSession(s) {
 }
 
 function renderWorkout() {
-  const s = state.currentSession || 'A';
+  // Auto-advance: find the correct next session based on logged history
+  const today = new Date().toDateString();
+  const todaySession = state.sessions.find(sess => new Date(sess.date).toDateString() === today);
+  if (todaySession) {
+    // Already logged something today — show that session as done
+    state.currentSession = todaySession.session;
+  } else {
+    // Find the last logged session and advance to the next one
+    const last = state.sessions[0];
+    if (last) {
+      const next = last.session === 'A' ? 'B' : last.session === 'B' ? 'C' : 'A';
+      state.currentSession = next;
+    } else {
+      state.currentSession = state.currentSession || 'A';
+    }
+  }
+
+  const s = state.currentSession;
   const session = SESSIONS[s];
 
-  // Badge
-  // Show connect prompt if not connected to sheets
   const prompt = document.getElementById('connect-prompt');
   if (prompt) prompt.style.display = (!state.google || !state.google.connected) ? 'block' : 'none';
 
@@ -582,30 +677,44 @@ function renderWorkout() {
   document.getElementById('week-num').textContent = state.week;
   document.getElementById('session-num').textContent = state.totalSessions + 1;
 
-  // Session nav
   ['A','B','C'].forEach(x => {
     const btn = document.getElementById('nav-' + x.toLowerCase());
     btn.className = 'session-nav-btn' + (x === s ? ` active-${x.toLowerCase()}` : '');
   });
 
-  // Check if already logged today
-  const today = new Date().toDateString();
-  const alreadyDone = state.sessions.find(sess => sess.session === s && new Date(sess.date).toDateString() === today);
+  const navRow = document.getElementById('session-nav-row');
 
+  // Check if already logged today
+  const alreadyDone = state.sessions.find(sess => new Date(sess.date).toDateString() === today);
   const content = document.getElementById('workout-content');
 
   if (alreadyDone) {
+    navRow.style.display = 'none';
+    activeExercise = null;
     content.innerHTML = `<div class="complete-banner">
       <div class="big">✅</div>
-      <p>Session ${s} logged today</p>
+      <p>Session ${alreadyDone.session} logged today</p>
     </div>
-    <button class="btn btn-secondary" onclick="undoSession('${alreadyDone.id}')">Undo — log again</button>`;
+    <button class="btn btn-secondary" onclick="undoSession(${alreadyDone.id})">Undo — log again</button>`;
     return;
   }
 
-  // Check for deload mode or stalls
-  let stallHTML = '';
+  // DETAIL VIEW — a specific exercise is open
+  if (activeExercise !== null) {
+    navRow.style.display = 'none';
+    renderExerciseDetail(s, session, activeExercise);
+    return;
+  }
 
+  // ICON PICKER VIEW
+  navRow.style.display = 'flex';
+  renderExercisePicker(s, session);
+}
+
+function renderExercisePicker(s, session) {
+  const content = document.getElementById('workout-content');
+
+  let stallHTML = '';
   if (state.deloadActive) {
     stallHTML += `<div class="deload-banner">
       <h3>🔄 Deload Active</h3>
@@ -616,7 +725,6 @@ function renderWorkout() {
     session.lifts.forEach(liftKey => {
       const key = LIFT_KEYS[liftKey];
       const missed = state.missedReps[key] || 0;
-      const stalls = state.stalls[key] || 0;
       if (missed >= 2) {
         stallHTML += `<div class="stall-banner">
           ⚠️ <strong>${LIFT_NAMES[liftKey]}</strong> — missed reps ${missed} sessions in a row.
@@ -629,68 +737,189 @@ function renderWorkout() {
     });
   }
 
-  // Build lift sections
-  let html = stallHTML;
+  let grid = '<div class="exercise-grid">';
   session.lifts.forEach((liftKey, li) => {
     const sets = getSetsForLift(liftKey, session.type);
     const workWeight = state.weights[LIFT_KEYS[liftKey]];
     const displayWeight = liftKey === 'squat_light' ? r(workWeight * 0.8) : workWeight;
 
-    let rows = '';
-    if (state.showWarmup) {
-      rows += `<tr><td colspan="4" class="section-label">Warm-up</td></tr>`;
-    }
+    const checkableSets = sets.filter(set => state.showWarmup || set.type !== 'warmup');
+    const doneCount = checkableSets.filter((set, si) => {
+      const realIdx = sets.indexOf(set);
+      return setDone[`${li}-${realIdx}`] !== undefined && setDone[`${li}-${realIdx}`] !== null;
+    }).length;
+    const failedCount = checkableSets.filter((set, si) => {
+      const realIdx = sets.indexOf(set);
+      return setDone[`${li}-${realIdx}`] === false;
+    }).length;
+    const isComplete = doneCount === checkableSets.length && checkableSets.length > 0;
 
-    sets.forEach((set, si) => {
-      if (!state.showWarmup && set.type === 'warmup') return;
-      if (set.type !== 'warmup' && state.showWarmup) {
-        const prevType = sets[si-1]?.type;
-        if (prevType === 'warmup') rows += `<tr><td colspan="4" class="section-label">Working Sets</td></tr>`;
-      }
+    grid += `<div class="exercise-card ${isComplete ? 'complete' : ''}" onclick="openExercise(${li})">
+      ${isComplete ? '<div class="exercise-check-badge">✅</div>' : ''}
+      <div class="exercise-name">${LIFT_NAMES[liftKey]}</div>
+      <div class="exercise-weight">${displayWeight}kg</div>
+      <div class="exercise-progress">${doneCount}/${checkableSets.length} sets${failedCount > 0 ? ` · <span style="color:var(--danger)">${failedCount} failed</span>` : ''}</div>
+    </div>`;
+  });
+  grid += '</div>';
 
-      const key = `${li}-${si}`;
-      const checked = setDone[key] || false;
-      const rowClass = set.type === 'heavy' ? 'heavy-row' : set.type === 'back' ? 'heavy-row' : set.type === 'work' ? 'work-row' : 'warmup-row';
-      const label = set.label || `${set.reps} reps`;
-
-      rows += `<tr class="set-row ${rowClass}">
-        <td>${set.type === 'warmup' ? `W${si+1}` : (set.type==='heavy'?'H':set.type==='back'?'B':`${si-WARMUP_PCTS.length+1}`)}</td>
-        <td>
-          <span class="weight-val">${set.weight}</span><span style="font-size:11px;color:var(--muted);margin-left:2px">kg</span><br>
-          <span class="pct-label">${set.pct}% · ${label}</span>
-          <div class="plate-display">${calcPlates(set.weight)}</div>
-        </td>
-        <td style="text-align:center;color:var(--muted);font-size:13px">${set.reps}</td>
-        <td><div class="set-check ${checked?'done':''}" onclick="toggleSet('${key}')"></div></td>
-      </tr>`;
+  const allDone = session.lifts.every((liftKey, li) => {
+    const sets = getSetsForLift(liftKey, session.type);
+    const checkableSets = sets.filter(set => state.showWarmup || set.type !== 'warmup');
+    return checkableSets.every((set, si) => {
+      const realIdx = sets.indexOf(set);
+      const status = setDone[`${li}-${realIdx}`];
+      // Allow done (true) or failed (false), but not undefined/null (not attempted)
+      return status === true || status === false;
     });
+  });
 
-    html += `<div class="lift-section">
-      <div class="lift-title">
-        <span class="lift-name">${LIFT_NAMES[liftKey]}</span>
-        <span class="lift-workweight">${displayWeight}kg work set</span>
+  content.innerHTML = stallHTML + grid +
+    (allDone ? `<button class="btn btn-primary" style="margin-top:20px" onclick="logSession('${s}')">Log Session ${s}</button>` : '');
+}
+
+function openExercise(li) {
+  activeExercise = li;
+  renderWorkout();
+}
+
+function closeExercise() {
+  activeExercise = null;
+  renderWorkout();
+}
+
+function renderExerciseDetail(s, session, li) {
+  const content = document.getElementById('workout-content');
+  const liftKey = session.lifts[li];
+  const sets = getSetsForLift(liftKey, session.type);
+  const workWeight = state.weights[LIFT_KEYS[liftKey]];
+  const displayWeight = liftKey === 'squat_light' ? r(workWeight * 0.8) : workWeight;
+
+  let rowsHTML = '';
+  let workSetCounter = 0;
+  let lastWorkSetIdx = -1; // Track the last work set
+  let completedWorkSets = 0;
+  let totalWorkSets = 0;
+  
+  // First pass: count work sets
+  sets.forEach((set, si) => {
+    if (!state.showWarmup && set.type === 'warmup') return;
+    if (set.type !== 'warmup') {
+      totalWorkSets++;
+      if (setDone[`${li}-${si}`]) completedWorkSets++;
+    }
+  });
+  
+  // Find which sets are visible (not warmup if showWarmup is false)
+  const visibleSets = sets.map((set, si) => {
+    if (!state.showWarmup && set.type === 'warmup') return null;
+    return { set, si };
+  }).filter(Boolean);
+
+  sets.forEach((set, si) => {
+    if (!state.showWarmup && set.type === 'warmup') return;
+
+    const key = `${li}-${si}`;
+    const isWarmup = set.type === 'warmup';
+    const label = set.label || `${set.reps} reps`;
+    let setLabel;
+    if (isWarmup) { setLabel = 'Warm-up'; }
+    else { workSetCounter++; setLabel = set.type === 'heavy' ? 'Heavy' : set.type === 'back' ? 'Back-off' : `Set ${workSetCounter}`; }
+
+    // Progressive unlock: disable sets until previous work set is marked
+    let isDisabled = false;
+    if (!isWarmup && lastWorkSetIdx >= 0) {
+      // Check if all previous work sets have a status
+      for (let i = 0; i < si; i++) {
+        const prevSet = sets[i];
+        // Skip warmup sets unless showing warmup
+        if (!state.showWarmup && prevSet.type === 'warmup') continue;
+        if (prevSet.type === 'warmup') continue; // Skip warmup sets for disabling logic
+        
+        const prevKey = `${li}-${i}`;
+        const prevStatus = setDone[prevKey];
+        if (prevStatus === undefined || prevStatus === null) {
+          isDisabled = true;
+          break;
+        }
+      }
+    }
+    if (!isWarmup) lastWorkSetIdx = si;
+
+    const disabledStyle = isDisabled ? 'opacity: 0.5; cursor: not-allowed;' : 'cursor: pointer;';
+    const clickHandler = isDisabled ? '' : `toggleSet('${key}')`;
+
+    rowsHTML += `<div class="big-set-row ${setDone[key] === true ? 'set-done' : ''} ${isWarmup ? 'set-warmup' : ''} ${isDisabled ? 'disabled' : ''}" onclick="${clickHandler}" style="${disabledStyle}">
+      <div class="big-set-info">
+        <div class="big-set-weight-row">
+          <span class="big-set-weight">${set.weight}</span>
+          <span class="big-set-unit">kg</span>
+          <span class="big-set-reps">× ${set.reps}</span>
+        </div>
+        <div class="big-plate-display">${calcPlatesHTML(set.weight)}</div>
       </div>
-      <div class="card" style="padding:12px 14px">
-        <table class="sets-table">
-          <thead><tr><th>#</th><th>Weight / Plates</th><th style="text-align:center">Reps</th><th style="text-align:right">✓</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>
+      <div class="big-check ${setDone[key] === true ? 'done' : setDone[key] === false ? 'failed' : ''}" id="check-${key}"></div>
     </div>`;
   });
 
-  html += `<button class="btn btn-primary" onclick="logSession('${s}')">Log Session ${s}</button>`;
-  content.innerHTML = html;
+  content.innerHTML = `
+    <div class="detail-header">
+      <button class="back-btn" onclick="closeExercise()">←</button>
+      <div>
+        <div class="detail-title">${LIFT_NAMES[liftKey]}</div>
+        <div class="detail-subtitle">${displayWeight}kg</div>
+      </div>
+    </div>
+    <div style="margin-bottom: 8px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+        <span style="font-size: 12px; color: var(--text-muted);">${completedWorkSets}/${totalWorkSets}</span>
+      </div>
+      <div style="width: 100%; height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden;">
+        <div style="width: ${totalWorkSets > 0 ? Math.round((completedWorkSets / totalWorkSets) * 100) : 0}%; height: 100%; background: var(--success); transition: width 0.3s ease;"></div>
+      </div>
+    </div>
+    ${rowsHTML}
+  `;
 }
 
 function toggleSet(key) {
-  setDone[key] = !setDone[key];
-  if (setDone[key]) {
-    if (!workoutStartTime) workoutStartTime = Date.now();
+  if (!workoutStartTime) workoutStartTime = Date.now();
+
+  // Cycle: undefined/null -> true (done) -> false (failed) -> null (reset)
+  const current = setDone[key];
+  if (current === undefined || current === null) {
+    setDone[key] = true;   // empty -> done
     startTimer();
+  } else if (current === true) {
+    setDone[key] = false;  // done -> failed
+    stopTimer();
+  } else {
+    setDone[key] = null;   // failed -> empty
   }
-  checkAllSetsDone();
-  renderWorkout();
+
+  // Re-render the detail view
+  const s = state.currentSession;
+  const session = SESSIONS[s];
+  if (activeExercise !== null) {
+    renderExerciseDetail(s, session, activeExercise);
+  }
+
+  // Auto-return to picker when all sets have been actioned (done or failed)
+  if (activeExercise !== null) {
+    const liftKey = session.lifts[activeExercise];
+    const sets = getSetsForLift(liftKey, session.type);
+    const checkable = sets.filter(set => state.showWarmup || set.type !== 'warmup');
+    const allActioned = checkable.every((set, si) => {
+      const realIdx = sets.indexOf(set);
+      return setDone[`${activeExercise}-${realIdx}`] !== undefined && setDone[`${activeExercise}-${realIdx}`] !== null;
+    });
+    if (allActioned) {
+      setTimeout(() => {
+        activeExercise = null;
+        renderWorkout();
+      }, 800);
+    }
+  }
 }
 
 function checkAllSetsDone() {
@@ -765,14 +994,18 @@ function closeSummary() {
     sets.forEach((set, si) => {
       if (set.type === 'warmup') return; // ignore warmups
       const doneKey = `${li}-${si}`;
-      if (!setDone[doneKey]) missedWorkingSet = true;
+      if (setDone[doneKey] !== true) missedWorkingSet = true;
     });
     if (missedWorkingSet) {
       state.missedReps[key] = (state.missedReps[key] || 0) + 1;
       state.stalls[key] = (state.stalls[key] || 0) + 1;
     } else {
-      state.missedReps[key] = 0;
-      state.stalls[key] = 0;
+      // Only reset if no failures at all
+      const anyFailed = sets.some((set, si) => {
+        if (set.type === 'warmup') return false;
+        return setDone[`${li}-${si}`] === false;
+      });
+      if (!anyFailed) { state.missedReps[key] = 0; state.stalls[key] = 0; }
     }
   });
 
@@ -798,7 +1031,8 @@ function logSession(sessionKey) {
     week: state.week,
     date: new Date().toISOString(),
     lifts: loggedLifts,
-    weights: { ...state.weights }
+    weights: { ...state.weights },
+    setDone: { ...setDone }
   };
 
   state.sessions.unshift(sessionLog);
@@ -829,12 +1063,101 @@ function logSession(sessionKey) {
   stopTimer();
 
   if (state.google.connected && state.google.spreadsheetId) appendSessionToSheet(sessionLog);
+  
+  // Check for deload recommendations
+  checkDeloadRecommendation();
+  
   renderWorkout();
 }
 
+function checkDeloadRecommendation() {
+  // Check for per-exercise deloads (2+ consecutive failures)
+  const liftsThatNeedDeload = [];
+  Object.keys(state.missedReps).forEach(key => {
+    const missedCount = state.missedReps[key] || 0;
+    if (missedCount >= 2) {
+      liftsThatNeedDeload.push(key);
+    }
+  });
+  
+  if (liftsThatNeedDeload.length > 0) {
+    showDeloadModal(liftsThatNeedDeload, 'failed');
+    return;
+  }
+  
+  // Check for scheduled deload (every 3 cycles = 9 weeks)
+  if (state.totalSessions % 9 === 0 && state.totalSessions > 0) {
+    showDeloadModal(Object.keys(state.weights), 'scheduled');
+  }
+}
+
+function showDeloadModal(liftsToDeload, type) {
+  state.pendingDeload = { lifts: liftsToDeload, type: type };
+  
+  const modal = document.getElementById('deload-modal');
+  const title = document.getElementById('deload-title');
+  const subtitle = document.getElementById('deload-subtitle');
+  const details = document.getElementById('deload-details');
+  
+  if (type === 'failed') {
+    const liftNames = liftsToDeload.map(k => LIFT_NAMES[k]).join(', ');
+    title.textContent = 'Deload Recommended';
+    subtitle.textContent = `${liftNames} needs recovery`;
+    details.innerHTML = `<strong>Why:</strong> ${liftNames} had 2+ failed sessions.<br><br><strong>What happens:</strong> These lifts will drop 10% for one session, then resume normal progression.`;
+  } else {
+    title.textContent = 'Scheduled Deload Time';
+    subtitle.textContent = 'You\'ve completed 3 cycles';
+    details.innerHTML = `<strong>Why:</strong> Regular deloads prevent overtraining and CNS fatigue.<br><br><strong>What happens:</strong> All lifts drop 10% for one session, then resume normal progression.`;
+  }
+  
+  modal.classList.add('visible');
+}
+
+function acceptDeload() {
+  if (!state.pendingDeload) return;
+  
+  const { lifts, type } = state.pendingDeload;
+  
+  // Apply 10% reduction
+  lifts.forEach(key => {
+    state.weights[key] = +(state.weights[key] * 0.9).toFixed(2);
+  });
+  
+  state.deloadActive = true;
+  state.deloadLifts = lifts;
+  state.deloadType = type;
+  
+  // Reset missed reps for these lifts
+  lifts.forEach(key => {
+    state.missedReps[key] = 0;
+    state.stalls[key] = 0;
+  });
+  
+  save();
+  
+  const message = type === 'failed' ? 
+    `${lifts.map(k => LIFT_NAMES[k]).join(', ')} deloaded 10%` :
+    'All lifts deloaded 10%';
+  showToast(`${message} — recover well! 💪`, 'success');
+  
+  document.getElementById('deload-modal').classList.remove('visible');
+  state.pendingDeload = null;
+  renderWorkout();
+}
+
+function declineDeload() {
+  document.getElementById('deload-modal').classList.remove('visible');
+  state.pendingDeload = null;
+  showToast('Deload declined — keep pushing! 💪', 'info');
+}
+
 function undoSession(id) {
-  const idx = state.sessions.findIndex(s => s.id === id);
-  if (idx === -1) return;
+  const idx = state.sessions.findIndex(s => s.id === id || s.id === +id);
+  if (idx === -1) {
+    console.error('Session not found:', id);
+    showToast('Could not find session to undo', 'error');
+    return;
+  }
   const sess = state.sessions[idx];
 
   // Reverse weight increment if it was a C session
@@ -845,10 +1168,17 @@ function undoSession(id) {
     });
   }
 
+  // Also remove from Google Sheets if synced
+  if (state.google.connected && state.google.spreadsheetId && sess.id) {
+    deleteSessionFromSheet(sess.id).catch(e => console.error('Failed to remove from sheets:', e));
+  }
+
   state.sessions.splice(idx, 1);
   state.totalSessions = Math.max(0, state.totalSessions - 1);
   state.currentSession = sess.session;
+  setDone = sess.setDone ? { ...sess.setDone } : {};
   save();
+  showToast(`Session ${sess.session} restored — edit and re-log ✓`, 'success');
   renderWorkout();
 }
 
@@ -862,15 +1192,15 @@ function setChartLift(lift, btn) {
 
 function renderProgress() {
   // Build chart data from session history
-  const relevantSessions = state.sessions.slice().reverse().filter(s => {
-    return Object.values(s.lifts).some(l => LIFT_KEYS[Object.keys(s.lifts).find(k => LIFT_KEYS[k] === chartLift)] === chartLift
-      || s.weights[chartLift]);
-  });
-
-  const data = state.sessions.slice().reverse().map(s => ({
-    label: `W${s.week}${s.session}`,
-    value: s.weights[chartLift] || 0
-  })).filter(d => d.value > 0);
+  // Only show sessions where this lift actually appeared
+  const liftSessions = {'squat': ['A','C'], 'bench': ['A','C'], 'row': ['A','C'], 'ohp': ['B'], 'deadlift': ['B']};
+  const relevantSessions = liftSessions[chartLift] || ['A','B','C'];
+  const data = state.sessions.slice().reverse()
+    .filter(s => relevantSessions.includes(s.session))
+    .map(s => ({
+      label: `W${s.week}${s.session}`,
+      value: s.weights[chartLift] || 0
+    })).filter(d => d.value > 0);
 
   drawChart('chart-main', data, chartLift.charAt(0).toUpperCase() + chartLift.slice(1), '#e8ff47');
 
@@ -1025,8 +1355,7 @@ function renderSettings() {
     </div>`).join('');
 
   document.getElementById('bar-weight').value = state.barWeight || 20;
-  document.getElementById('show-warmup').checked = state.showWarmup !== false;
-  document.querySelectorAll('input[name="rounding"]').forEach(r => { r.checked = parseFloat(r.value) === (state.rounding||2.5); });
+  document.querySelectorAll('input[name="rounding"]').forEach(r => { r.checked = parseFloat(r.value) === (state.rounding||1.25); });
   document.querySelectorAll('input[name="rest"]').forEach(r => { r.checked = parseInt(r.value) === (state.restSeconds||180); });
   updateSheetsUI();
 }
@@ -1048,7 +1377,6 @@ function setWeight(key, val) {
 
 function saveSettings() {
   state.barWeight  = parseFloat(document.getElementById('bar-weight').value) || 20;
-  state.showWarmup = document.getElementById('show-warmup').checked;
   const rEl = document.querySelector('input[name="rounding"]:checked');
   state.rounding = rEl ? parseFloat(rEl.value) : 2.5;
   const restEl = document.querySelector('input[name="rest"]:checked');
@@ -1306,6 +1634,17 @@ async function appendSessionToSheet(session) {
     );
     await writeStateToSheet();
   } catch(e) { console.error(e); showToast('Sheet sync failed', 'error'); }
+}
+
+async function syncStateToSheet() {
+  await writeStateToSheet();
+}
+
+async function deleteSessionFromSheet(sessionId) {
+  if (!state.google.token || !state.google.spreadsheetId) return;
+  // Note: Deleting rows from Sheets is complex; for now we just sync the updated state
+  // The session is removed from state.sessions and that will be reflected on next write
+  await writeStateToSheet();
 }
 
 // ── CALENDAR ─────────────────────────────────────────────────────
