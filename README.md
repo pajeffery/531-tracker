@@ -4,12 +4,24 @@ A progressive web app (PWA) for tracking Madcow 5×5 strength training workouts 
 
 ## 🎯 Overview
 
-Forge is a minimalist, offline-capable workout tracker specifically designed for the **Madcow 5×5** strength training protocol. It automatically calculates warm-up sets, tracks session progress, detects failed reps, and recommends deloads based on training science.
+Forge is a minimalist, offline-capable workout tracker inspired by the **Madcow 5×5** strength training protocol, but designed with flexibility for busy schedules. 
+
+Unlike traditional Madcow which requires strict weekly scheduling (Mon/Wed/Fri), Forge lets you train whenever your schedule allows while maintaining the periodized progression structure. It automatically calculates warm-up sets, tracks session progress, detects failed reps, and recommends deloads based on training science.
 
 Built with vanilla JavaScript and hosted on Azure Static Web Apps, Forge works on any device with a web browser - no installation required.
 
 **Production**: https://happy-pond-003313103.7.azurestaticapps.net  
 **Development**: https://agreeable-pond-07ec37b03.7.azurestaticapps.net
+
+---
+
+## 📖 Origin Story
+
+Madcow 5×5 is an excellent periodized strength program, but its rigid weekly schedule (Session A on Monday, B on Wednesday, C on Friday) didn't fit a busy lifestyle with irregular training availability.
+
+Forge was built to solve this: take the proven training principles of Madcow (3-week periodization cycles, intelligent progression, strategic deloads) but remove the calendar constraint. Train whenever you can - Forge tracks your cycle progress, not the day of the week.
+
+The result is a flexible, schedule-agnostic training tracker that maintains training integrity while adapting to real life.
 
 ---
 
@@ -45,9 +57,13 @@ Built with vanilla JavaScript and hosted on Azure Static Web Apps, Forge works o
 
 ---
 
-## 🏋️ Madcow 5×5 Protocol Overview
+## 🏋️ Madcow-Inspired Training Protocol
 
-Madcow 5×5 is a three-week strength building protocol with automatic progression:
+Forge implements a periodized strength training system inspired by Madcow 5×5, but with flexible scheduling. Train whenever your schedule allows - the app tracks your cycle progress, not calendar days.
+
+### Session Structure
+
+The program cycles through three session types (A, B, C) repeated over three weeks. You can train these in any order based on your availability.
 
 ### Session Structure
 

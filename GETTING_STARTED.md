@@ -68,9 +68,9 @@ To sync your workouts automatically:
 
 ## 4. Understand the Workout Structure
 
-Forge follows Madcow 5×5, which repeats a 3-session cycle:
+Forge uses a 3-session cycle inspired by Madcow 5×5. Unlike the original program which requires strict Mon/Wed/Fri scheduling, **you can train these sessions whenever your schedule allows**. Forge tracks your cycle progression, not the calendar.
 
-### Session A
+### The Three Session Types
 - Squat, Bench, Row
 - Moderate intensity - focus on form and consistency
 
@@ -82,7 +82,16 @@ Forge follows Madcow 5×5, which repeats a 3-session cycle:
 - Heavy Squat, Heavy Bench, Heavy Row
 - Highest intensity - final set is AMRAP (as many reps as possible)
 
-**Typical week**: Mon (A) → Wed (B) → Fri (C) → Mon (A)
+**Typical training pattern**: Session A → Session B → Session C → Session A (repeat)
+
+**Flexible schedule example**: 
+- Monday: Session A
+- Wednesday: Session C (flexible order!)
+- Friday: Session B
+- Next Monday: Session A
+- (Or skip a day, train twice in one day, whatever works)
+
+The key is completing all three sessions in order before the cycle repeats.
 
 ## 5. Log Your First Workout
 
