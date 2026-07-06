@@ -461,6 +461,9 @@ const LIFT_NAMES = {
   squat: 'Squat', bench: 'Bench Press', row: 'Barbell Row',
   ohp: 'OHP', deadlift: 'Deadlift', squat_light: 'Squat (Light)'
 };
+const LIFT_NOTES = {
+  squat_light: 'Light session — 80% of work weight. Active recovery before Deadlift.'
+};
 
 const LIFT_KEYS = { squat: 'squat', bench: 'bench', row: 'row', ohp: 'ohp', deadlift: 'deadlift', squat_light: 'squat' };
 
@@ -525,14 +528,44 @@ function unitLabel() { return 'kg'; }
 const PLATES_KG = [25, 20, 15, 10, 5, 2.5, 1.25];
 const PLATE_CLASSES = { 25:'p-25',20:'p-20',15:'p-15',10:'p-10',5:'p-5',2.5:'p-2',1.25:'p-1' };
 
+function smartPlates(targetWeight) {
+  // Returns array of plates per side using practical loading strategy:
+  // Prefer fewest plate changes, avoid mixing similar sizes unnecessarily.
+  // e.g. 30kg per side = 20+10, not 15+10+5
+  const bar = state.barWeight || 20;
+  const perSide = Math.round(((targetWeight - bar) / 2) * 1000) / 1000;
+  if (perSide <= 0) return [];
+
+  const available = [25, 20, 15, 10, 5, 2.5, 1.25];
+  let best = null;
+  let bestScore = Infinity;
+
+  function solve(remaining, plates, idx) {
+    remaining = Math.round(remaining * 1000) / 1000;
+    if (Math.abs(remaining) < 0.01) {
+      // Score: fewer unique sizes = better, fewer total plates = better
+      const uniqueSizes = new Set(plates).size;
+      const score = plates.length * 2 + uniqueSizes;
+      if (score < bestScore) { bestScore = score; best = [...plates]; }
+      return;
+    }
+    if (idx >= available.length || remaining < 0) return;
+    const p = available[idx];
+    // Try using as many of this plate as needed
+    const maxCount = Math.floor((remaining + 0.01) / p);
+    for (let count = maxCount; count >= 0; count--) {
+      solve(remaining - count * p, [...plates, ...Array(count).fill(p)], idx + 1);
+    }
+  }
+
+  solve(perSide, [], 0);
+  return best || [];
+}
+
 function calcPlates(targetWeight) {
   const bar = state.barWeight || 20;
   if (targetWeight <= bar) return `<span class="plate p-bar">${bar}kg bar only</span>`;
-  let remaining = (targetWeight - bar) / 2;
-  const result = [];
-  for (const p of PLATES_KG) {
-    while (remaining >= p - 0.01) { result.push(p); remaining -= p; remaining = Math.round(remaining*1000)/1000; }
-  }
+  const result = smartPlates(targetWeight);
   if (!result.length) return `<span class="plate p-bar">bar only</span>`;
   return `<span class="plate p-bar">bar</span>` + result.map(p => `<span class="plate ${PLATE_CLASSES[p]||'p-2'}">${p}</span>`).join('');
 }
@@ -540,11 +573,7 @@ function calcPlates(targetWeight) {
 function calcPlatesHTML(targetWeight) {
   const bar = state.barWeight || 20;
   if (targetWeight <= bar) return `<span class="plate-large p-bar">${bar}kg bar only</span>`;
-  let remaining = (targetWeight - bar) / 2;
-  const result = [];
-  for (const p of PLATES_KG) {
-    while (remaining >= p - 0.01) { result.push(p); remaining -= p; remaining = Math.round(remaining*1000)/1000; }
-  }
+  const result = smartPlates(targetWeight);
   if (!result.length) return `<span class="plate-large p-bar">bar only</span>`;
   const plateHTML = `<span class="plate-large p-bar">bar</span>` + result.map(p => `<span class="plate-large ${PLATE_CLASSES[p]||'p-2'}">${p}</span>`).join('');
   return `<div class="plates-display" onclick="copyPlates(this, '${result.join(',')}')">${plateHTML}</div>`;
@@ -1496,10 +1525,59 @@ function disconnectSheets() {
   save(); updateSheetsUI();
 }
 
+async function refreshToken() {
+  return new Promise((resolve, reject) => {
+    try {
+      if (!googleTokenClient) {
+        googleTokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: GOOGLE_CLIENT_ID,
+          scope: SCOPES,
+          prompt: '',
+          callback: (resp) => {
+            if (resp.error) { reject(resp.error); return; }
+            state.google.token = resp.access_token;
+            localStorage.setItem('forge_state', JSON.stringify(state));
+            resolve(resp.access_token);
+          }
+        });
+      } else {
+        // Update callback for this refresh
+        googleTokenClient.callback = (resp) => {
+          if (resp.error) { reject(resp.error); return; }
+          state.google.token = resp.access_token;
+          localStorage.setItem('forge_state', JSON.stringify(state));
+          resolve(resp.access_token);
+        };
+      }
+      googleTokenClient.requestAccessToken({ prompt: '' });
+    } catch(e) { reject(e); }
+  });
+}
+
 async function sheetsRequest(url, method='GET', body=null) {
-  const opts = { method, headers: { 'Authorization':'Bearer '+state.google.token, 'Content-Type':'application/json' } };
-  if (body) opts.body = JSON.stringify(body);
-  const res = await fetch(url, opts);
+  const makeRequest = async (token) => {
+    const opts = { method, headers: { 'Authorization':'Bearer '+token, 'Content-Type':'application/json' } };
+    if (body) opts.body = JSON.stringify(body);
+    return fetch(url, opts);
+  };
+
+  let res = await makeRequest(state.google.token);
+
+  // If 401 (expired token), refresh and retry once
+  if (res.status === 401) {
+    try {
+      const newToken = await refreshToken();
+      res = await makeRequest(newToken);
+    } catch(e) {
+      showToast('Google auth expired — please reconnect', 'error');
+      state.google.connected = false;
+      state.google.token = null;
+      save();
+      updateSheetsUI();
+      throw new Error('Token refresh failed: ' + e);
+    }
+  }
+
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
