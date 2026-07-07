@@ -528,44 +528,26 @@ function unitLabel() { return 'kg'; }
 const PLATES_KG = [25, 20, 15, 10, 5, 2.5, 1.25];
 const PLATE_CLASSES = { 25:'p-25',20:'p-20',15:'p-15',10:'p-10',5:'p-5',2.5:'p-2',1.25:'p-1' };
 
-function smartPlates(targetWeight) {
-  // Returns array of plates per side using practical loading strategy:
-  // Prefer fewest plate changes, avoid mixing similar sizes unnecessarily.
-  // e.g. 30kg per side = 20+10, not 15+10+5
+function greedyPlates(targetWeight) {
+  // Greedy largest-first: correct and practical for standard gym plate sets
   const bar = state.barWeight || 20;
-  const perSide = Math.round(((targetWeight - bar) / 2) * 1000) / 1000;
-  if (perSide <= 0) return [];
-
   const available = [25, 20, 15, 10, 5, 2.5, 1.25];
-  let best = null;
-  let bestScore = Infinity;
-
-  function solve(remaining, plates, idx) {
-    remaining = Math.round(remaining * 1000) / 1000;
-    if (Math.abs(remaining) < 0.01) {
-      // Score: fewer unique sizes = better, fewer total plates = better
-      const uniqueSizes = new Set(plates).size;
-      const score = plates.length * 2 + uniqueSizes;
-      if (score < bestScore) { bestScore = score; best = [...plates]; }
-      return;
-    }
-    if (idx >= available.length || remaining < 0) return;
-    const p = available[idx];
-    // Try using as many of this plate as needed
-    const maxCount = Math.floor((remaining + 0.01) / p);
-    for (let count = maxCount; count >= 0; count--) {
-      solve(remaining - count * p, [...plates, ...Array(count).fill(p)], idx + 1);
+  let remaining = Math.round(((targetWeight - bar) / 2) * 1000) / 1000;
+  if (remaining <= 0) return [];
+  const result = [];
+  for (const p of available) {
+    while (remaining >= p - 0.01) {
+      result.push(p);
+      remaining = Math.round((remaining - p) * 1000) / 1000;
     }
   }
-
-  solve(perSide, [], 0);
-  return best || [];
+  return result;
 }
 
 function calcPlates(targetWeight) {
   const bar = state.barWeight || 20;
   if (targetWeight <= bar) return `<span class="plate p-bar">${bar}kg bar only</span>`;
-  const result = smartPlates(targetWeight);
+  const result = greedyPlates(targetWeight);
   if (!result.length) return `<span class="plate p-bar">bar only</span>`;
   return `<span class="plate p-bar">bar</span>` + result.map(p => `<span class="plate ${PLATE_CLASSES[p]||'p-2'}">${p}</span>`).join('');
 }
@@ -573,7 +555,7 @@ function calcPlates(targetWeight) {
 function calcPlatesHTML(targetWeight) {
   const bar = state.barWeight || 20;
   if (targetWeight <= bar) return `<span class="plate-large p-bar">${bar}kg bar only</span>`;
-  const result = smartPlates(targetWeight);
+  const result = greedyPlates(targetWeight);
   if (!result.length) return `<span class="plate-large p-bar">bar only</span>`;
   const plateHTML = `<span class="plate-large p-bar">bar</span>` + result.map(p => `<span class="plate-large ${PLATE_CLASSES[p]||'p-2'}">${p}</span>`).join('');
   return `<div class="plates-display" onclick="copyPlates(this, '${result.join(',')}')">${plateHTML}</div>`;
