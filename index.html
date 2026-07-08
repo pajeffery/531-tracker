@@ -900,7 +900,7 @@ function renderExerciseDetail(s, session, li) {
           <span class="big-set-unit">kg</span>
           <span class="big-set-reps">× ${set.reps}</span>
         </div>
-        <div class="big-plate-display">${calcPlatesHTML(set.weight, ${LIFT_KEYS[liftKey]}, ${isWarmup})}</div>
+        <div class="big-plate-display">${calcPlatesHTML(set.weight, LIFT_KEYS[liftKey], isWarmup)}</div>
       </div>
       <div class="big-check ${setDone[key] === true ? 'done' : setDone[key] === false ? 'failed' : ''}" id="check-${key}"></div>
     </div>`;
