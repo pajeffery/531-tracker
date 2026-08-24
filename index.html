@@ -1060,12 +1060,18 @@ function logSession(sessionKey) {
   const session = SESSIONS[sessionKey];
   const loggedLifts = {};
 
-  session.lifts.forEach(liftKey => {
+  session.lifts.forEach((liftKey, liftIndex) => {
     const key = LIFT_KEYS[liftKey];
     const isLight = liftKey === 'squat_light';
+    const setConfig = session.sets[liftIndex];
+    // Get target reps from the last working set (or the sole working set)
+    const workingSets = setConfig.filter(s => s.type === 'working');
+    const targetReps = workingSets.length > 0 ? workingSets[workingSets.length - 1].reps : '';
     loggedLifts[liftKey] = {
       name: LIFT_NAMES[liftKey],
-      weight: isLight ? r(state.weights[key] * 0.8) : state.weights[key]
+      weight: isLight ? r(state.weights[key] * 0.8) : state.weights[key],
+      reps: targetReps,
+      setIndex: liftIndex
     };
   });
 
@@ -1608,7 +1614,7 @@ async function ensureSpreadsheet() {
       } catch { state.google.spreadsheetId = null; }
     }
     // Create spreadsheet with Sessions + State tabs
-    const sessionHeaders = ['Date','Week','Session','Lift','Work Weight (kg)'];
+    const sessionHeaders = ['Date','Week','Session','Lift','Reps','Work Weight (kg)','Status'];
     const stateHeaders   = ['Key','Value'];
     const ss = await sheetsRequest('https://sheets.googleapis.com/v4/spreadsheets', 'POST', {
       properties: { title: SHEET_NAME },
@@ -1695,15 +1701,15 @@ async function readSessionsFromSheet() {
   if (!state.google.token || !state.google.spreadsheetId) return [];
   try {
     const res = await sheetsRequest(
-      `https://sheets.googleapis.com/v4/spreadsheets/${state.google.spreadsheetId}/values/Sessions!A2:E1000`
+      `https://sheets.googleapis.com/v4/spreadsheets/${state.google.spreadsheetId}/values/Sessions!A2:G1000`
     );
     const rows = res.values || [];
     // Reconstruct session objects grouped by date+session
     const grouped = {};
-    rows.forEach(([date, week, session, lift, weight]) => {
+    rows.forEach(([date, week, session, lift, reps, weight, status]) => {
       const key = `${date}-${session}-${week}`;
       if (!grouped[key]) grouped[key] = { date, week: parseInt(week), session, lifts: {} };
-      grouped[key].lifts[lift] = { name: lift, weight: parseFloat(weight) };
+      grouped[key].lifts[lift] = { name: lift, reps: reps || '', weight: parseFloat(weight), status: status || 'SKIPPED' };
     });
     return Object.values(grouped).map((s,i) => ({
       id: i,
@@ -1720,9 +1726,15 @@ async function appendSessionToSheet(session) {
   try {
     if (!state.google.token || !state.google.spreadsheetId) return;
     const date = new Date(session.date).toLocaleDateString('en-GB');
-    const rows = Object.values(session.lifts).map(l => [date, session.week, session.session, l.name, l.weight]);
+    const rows = Object.values(session.lifts).map(l => {
+      const liftKey = LIFT_KEYS[l.name];
+      const setKey = `${liftKey}-${l.setIndex || 0}`;
+      const status = session.setDone && session.setDone[setKey];
+      const statusStr = status === true ? 'PASS' : status === false ? 'FAILED' : 'SKIPPED';
+      return [date, session.week, session.session, l.name, l.reps || '', l.weight, statusStr];
+    });
     await sheetsRequest(
-      `https://sheets.googleapis.com/v4/spreadsheets/${state.google.spreadsheetId}/values/Sessions!A:E:append?valueInputOption=USER_ENTERED`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${state.google.spreadsheetId}/values/Sessions!A:G:append?valueInputOption=USER_ENTERED`,
       'POST', { values: rows }
     );
     await writeStateToSheet();
