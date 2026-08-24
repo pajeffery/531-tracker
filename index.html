@@ -1058,40 +1058,32 @@ function closeSummary() {
 
 function logSession(sessionKey) {
   const session = SESSIONS[sessionKey];
-  const loggedLifts = {};
+  const loggedSets = []; // Changed: array of sets instead of object of lifts
 
   session.lifts.forEach((liftKey) => {
     const key = LIFT_KEYS[liftKey];
-    const isLight = liftKey === 'squat_light';
     
     // Get the sets for this lift (same way they're rendered)
     const sets = getSetsForLift(liftKey, session.type);
     
-    // Find the last "real" working set (type='work', 'heavy', or 'back')
-    const realWorkingSets = sets.map((s, i) => ({ set: s, index: i }))
-      .filter(x => x.set.type !== 'warmup' && x.set.type !== undefined);
-    
-    if (realWorkingSets.length === 0) {
-      console.warn(`No working sets found for ${liftKey}`);
-      return;
-    }
-    
-    const lastWorkSet = realWorkingSets[realWorkingSets.length - 1];
-    const statusKey = `${key}-${lastWorkSet.index}`;
-    const setStatus = setDone[statusKey];
-    
-    const weight = isLight ? r(state.weights[key] * 0.8) : state.weights[key];
-    const reps = lastWorkSet.set.reps;
-    
-    console.log(`Logging ${liftKey}: key=${key}, statusKey=${statusKey}, status=${setStatus}, weight=${weight}, reps=${reps}`);
-    
-    loggedLifts[liftKey] = {
-      name: LIFT_NAMES[liftKey],
-      weight: weight,
-      reps: reps,
-      statusKey: statusKey,
-      status: setStatus
-    };
+    // Log only the "real" working sets (skip warmups)
+    sets.forEach((set, setIndex) => {
+      if (set.type === 'work' || set.type === 'heavy' || set.type === 'back') {
+        const statusKey = `${key}-${setIndex}`;
+        const setStatus = setDone[statusKey];
+        
+        console.log(`Logging ${liftKey} set ${setIndex}: type=${set.type}, weight=${set.weight}, reps=${set.reps}, statusKey=${statusKey}, status=${setStatus}`);
+        
+        loggedSets.push({
+          liftName: LIFT_NAMES[liftKey],
+          setType: set.type === 'work' ? 'Work' : set.type === 'heavy' ? 'Heavy' : 'Back-off',
+          reps: set.reps,
+          weight: set.weight,
+          statusKey: statusKey,
+          status: setStatus
+        });
+      }
+    });
   });
 
   const sessionLog = {
@@ -1099,7 +1091,7 @@ function logSession(sessionKey) {
     session: sessionKey,
     week: state.week,
     date: new Date().toISOString(),
-    lifts: loggedLifts,
+    sets: loggedSets,  // Changed: now contains per-set data
     weights: { ...state.weights },
     setDone: { ...setDone }
   };
@@ -1633,7 +1625,7 @@ async function ensureSpreadsheet() {
       } catch { state.google.spreadsheetId = null; }
     }
     // Create spreadsheet with Sessions + State tabs
-    const sessionHeaders = ['Date','Week','Session','Lift','Reps','Work Weight (kg)','Status'];
+    const sessionHeaders = ['Date','Week','Session','Lift','Set Type','Reps','Weight (kg)','Status'];
     const stateHeaders   = ['Key','Value'];
     const ss = await sheetsRequest('https://sheets.googleapis.com/v4/spreadsheets', 'POST', {
       properties: { title: SHEET_NAME },
@@ -1720,22 +1712,29 @@ async function readSessionsFromSheet() {
   if (!state.google.token || !state.google.spreadsheetId) return [];
   try {
     const res = await sheetsRequest(
-      `https://sheets.googleapis.com/v4/spreadsheets/${state.google.spreadsheetId}/values/Sessions!A2:G1000`
+      `https://sheets.googleapis.com/v4/spreadsheets/${state.google.spreadsheetId}/values/Sessions!A2:H1000`
     );
     const rows = res.values || [];
     // Reconstruct session objects grouped by date+session
+    // Now each row is a single set, not a lift
     const grouped = {};
-    rows.forEach(([date, week, session, lift, reps, weight, status]) => {
+    rows.forEach(([date, week, session, lift, setType, reps, weight, status]) => {
       const key = `${date}-${session}-${week}`;
-      if (!grouped[key]) grouped[key] = { date, week: parseInt(week), session, lifts: {} };
-      grouped[key].lifts[lift] = { name: lift, reps: reps || '', weight: parseFloat(weight), status: status || 'SKIPPED' };
+      if (!grouped[key]) grouped[key] = { date, week: parseInt(week), session, sets: [] };
+      grouped[key].sets.push({
+        liftName: lift,
+        setType: setType || '',
+        reps: reps || '',
+        weight: parseFloat(weight),
+        status: status || 'SKIPPED'
+      });
     });
     return Object.values(grouped).map((s,i) => ({
       id: i,
       session: s.session,
       week: s.week,
       date: new Date(s.date.split('/').reverse().join('-')).toISOString(),
-      lifts: s.lifts,
+      sets: s.sets,
       weights: state.weights
     })).reverse();
   } catch(e) { console.error('readSessionsFromSheet error:', e); return []; }
@@ -1748,13 +1747,21 @@ async function appendSessionToSheet(session) {
       return;
     }
     const date = new Date(session.date).toLocaleDateString('en-GB');
-    const rows = Object.values(session.lifts).map(l => {
-      const statusStr = l.status === true ? 'PASS' : l.status === false ? 'FAILED' : 'SKIPPED';
-      console.log(`Syncing ${l.name}: weight=${l.weight}, reps=${l.reps}, status=${statusStr} (raw=${l.status}, statusKey=${l.statusKey})`);
-      return [date, session.week, session.session, l.name, l.reps || '', l.weight, statusStr];
+    
+    // Build one row per set
+    const rows = (session.sets || []).map(s => {
+      const statusStr = s.status === true ? 'PASS' : s.status === false ? 'FAILED' : 'SKIPPED';
+      console.log(`Syncing ${s.liftName} ${s.setType}: reps=${s.reps}, weight=${s.weight}, status=${statusStr}`);
+      return [date, session.week, session.session, s.liftName, s.setType, s.reps, s.weight, statusStr];
     });
+    
+    if (rows.length === 0) {
+      console.log('No sets to sync');
+      return;
+    }
+    
     console.log('Rows to sync:', rows);
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${state.google.spreadsheetId}/values/Sessions!A:G:append?valueInputOption=USER_ENTERED`;
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${state.google.spreadsheetId}/values/Sessions!A:H:append?valueInputOption=USER_ENTERED`;
     console.log('Sync URL:', url);
     const res = await sheetsRequest(url, 'POST', { values: rows });
     console.log('Sheets response:', res);
