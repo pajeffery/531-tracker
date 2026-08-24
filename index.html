@@ -1064,7 +1064,7 @@ function logSession(sessionKey) {
   console.log('setDone object:', setDone);
   console.log('setDone keys:', Object.keys(setDone));
 
-  session.lifts.forEach((liftKey) => {
+  session.lifts.forEach((liftKey, liftIndex) => {  // Use liftIndex!
     const key = LIFT_KEYS[liftKey];
     
     // Get the sets for this lift
@@ -1080,12 +1080,12 @@ function logSession(sessionKey) {
     const maxWeightSet = workingSets[workingSets.length - 1];
     const maxWeight = maxWeightSet.weight;
     
-    // Find the status of the max weight set
+    // Find the status of the max weight set - use liftIndex (0, 1, 2...) not the key!
     const maxWeightSetIndex = sets.indexOf(maxWeightSet);
-    const statusKey = `${key}-${maxWeightSetIndex}`;
+    const statusKey = `${liftIndex}-${maxWeightSetIndex}`;  // Changed: use liftIndex
     const exerciseStatus = setDone[statusKey];
     
-    console.log(`${liftKey}: key=${key}, sets.length=${sets.length}, maxWeightSetIndex=${maxWeightSetIndex}, statusKey=${statusKey}, status=${exerciseStatus}`);
+    console.log(`${liftKey} (index=${liftIndex}): sets.length=${sets.length}, maxWeightSetIndex=${maxWeightSetIndex}, statusKey=${statusKey}, status=${exerciseStatus}`);
     console.log(`  All sets for ${liftKey}:`, sets.map((s, i) => `[${i}]=${s.type}`).join(', '));
     console.log(`  setDone[${statusKey}] = ${exerciseStatus}`);
     
