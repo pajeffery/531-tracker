@@ -1058,15 +1058,35 @@ function closeSummary() {
 
 function logSession(sessionKey) {
   const session = SESSIONS[sessionKey];
-  const loggedLifts = {};
+  const loggedExercises = []; 
 
-  session.lifts.forEach(liftKey => {
+  session.lifts.forEach((liftKey, liftIndex) => {
     const key = LIFT_KEYS[liftKey];
-    const isLight = liftKey === 'squat_light';
-    loggedLifts[liftKey] = {
-      name: LIFT_NAMES[liftKey],
-      weight: isLight ? r(state.weights[key] * 0.8) : state.weights[key]
-    };
+    
+    // Get the sets for this lift
+    const sets = getSetsForLift(liftKey, session.type);
+    
+    // Find the maximum weight (should be the last working set)
+    const workingSets = sets.filter(s => s.type === 'work' || s.type === 'heavy' || s.type === 'back');
+    if (workingSets.length === 0) {
+      console.warn(`No working sets found for ${liftKey}`);
+      return;
+    }
+    
+    const maxWeightSet = workingSets[workingSets.length - 1];
+    const maxWeight = maxWeightSet.weight;
+    
+    // Find the status of the max weight set using liftIndex (0, 1, 2...)
+    const maxWeightSetIndex = sets.indexOf(maxWeightSet);
+    const statusKey = `${liftIndex}-${maxWeightSetIndex}`;
+    const exerciseStatus = setDone[statusKey];
+    
+    loggedExercises.push({
+      exerciseName: LIFT_NAMES[liftKey],
+      weight: maxWeight,
+      statusKey: statusKey,
+      status: exerciseStatus
+    });
   });
 
   const sessionLog = {
@@ -1074,7 +1094,7 @@ function logSession(sessionKey) {
     session: sessionKey,
     week: state.week,
     date: new Date().toISOString(),
-    lifts: loggedLifts,
+    exercises: loggedExercises,  // One row per exercise
     weights: { ...state.weights },
     setDone: { ...setDone }
   };
@@ -1608,7 +1628,7 @@ async function ensureSpreadsheet() {
       } catch { state.google.spreadsheetId = null; }
     }
     // Create spreadsheet with Sessions + State tabs
-    const sessionHeaders = ['Date','Week','Session','Lift','Work Weight (kg)'];
+    const sessionHeaders = ['Date','Session','Exercise','Weight (kg)','Status'];
     const stateHeaders   = ['Key','Value'];
     const ss = await sheetsRequest('https://sheets.googleapis.com/v4/spreadsheets', 'POST', {
       properties: { title: SHEET_NAME },
@@ -1700,17 +1720,20 @@ async function readSessionsFromSheet() {
     const rows = res.values || [];
     // Reconstruct session objects grouped by date+session
     const grouped = {};
-    rows.forEach(([date, week, session, lift, weight]) => {
-      const key = `${date}-${session}-${week}`;
-      if (!grouped[key]) grouped[key] = { date, week: parseInt(week), session, lifts: {} };
-      grouped[key].lifts[lift] = { name: lift, weight: parseFloat(weight) };
+    rows.forEach(([date, session, exercise, weight, status]) => {
+      const key = `${date}-${session}`;
+      if (!grouped[key]) grouped[key] = { date, session, exercises: [] };
+      grouped[key].exercises.push({
+        exerciseName: exercise,
+        weight: parseFloat(weight),
+        status: status || 'SKIPPED'
+      });
     });
     return Object.values(grouped).map((s,i) => ({
       id: i,
       session: s.session,
-      week: s.week,
       date: new Date(s.date.split('/').reverse().join('-')).toISOString(),
-      lifts: s.lifts,
+      exercises: s.exercises,
       weights: state.weights
     })).reverse();
   } catch(e) { console.error('readSessionsFromSheet error:', e); return []; }
@@ -1720,13 +1743,23 @@ async function appendSessionToSheet(session) {
   try {
     if (!state.google.token || !state.google.spreadsheetId) return;
     const date = new Date(session.date).toLocaleDateString('en-GB');
-    const rows = Object.values(session.lifts).map(l => [date, session.week, session.session, l.name, l.weight]);
-    await sheetsRequest(
-      `https://sheets.googleapis.com/v4/spreadsheets/${state.google.spreadsheetId}/values/Sessions!A:E:append?valueInputOption=USER_ENTERED`,
-      'POST', { values: rows }
-    );
+    
+    // Build one row per exercise: Date | Session | Exercise | Weight | Status
+    const rows = (session.exercises || []).map(e => {
+      const statusStr = e.status === true ? 'PASS' : e.status === false ? 'FAILED' : 'SKIPPED';
+      return [date, session.session, e.exerciseName, e.weight, statusStr];
+    });
+    
+    if (rows.length === 0) return;
+    
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${state.google.spreadsheetId}/values/Sessions!A:E:append?valueInputOption=USER_ENTERED`;
+    await sheetsRequest(url, 'POST', { values: rows });
     await writeStateToSheet();
-  } catch(e) { console.error(e); showToast('Sheet sync failed', 'error'); }
+    showToast('Session synced to Google Sheets ✓', 'success');
+  } catch(e) { 
+    console.error('appendSessionToSheet error:', e);
+    showToast('Sheet sync failed: ' + e.message, 'error'); 
+  }
 }
 
 async function syncStateToSheet() {
