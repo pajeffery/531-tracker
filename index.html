@@ -1060,6 +1060,10 @@ function logSession(sessionKey) {
   const session = SESSIONS[sessionKey];
   const loggedExercises = []; 
 
+  console.log('=== logSession START ===');
+  console.log('setDone object:', setDone);
+  console.log('setDone keys:', Object.keys(setDone));
+
   session.lifts.forEach((liftKey) => {
     const key = LIFT_KEYS[liftKey];
     
@@ -1081,7 +1085,9 @@ function logSession(sessionKey) {
     const statusKey = `${key}-${maxWeightSetIndex}`;
     const exerciseStatus = setDone[statusKey];
     
-    console.log(`Logging ${liftKey}: maxWeight=${maxWeight}, statusKey=${statusKey}, status=${exerciseStatus}`);
+    console.log(`${liftKey}: key=${key}, sets.length=${sets.length}, maxWeightSetIndex=${maxWeightSetIndex}, statusKey=${statusKey}, status=${exerciseStatus}`);
+    console.log(`  All sets for ${liftKey}:`, sets.map((s, i) => `[${i}]=${s.type}`).join(', '));
+    console.log(`  setDone[${statusKey}] = ${exerciseStatus}`);
     
     loggedExercises.push({
       exerciseName: LIFT_NAMES[liftKey],
@@ -1090,6 +1096,9 @@ function logSession(sessionKey) {
       status: exerciseStatus
     });
   });
+  
+  console.log('Logged exercises:', loggedExercises);
+  console.log('=== logSession END ===');
 
   const sessionLog = {
     id: Date.now(),
