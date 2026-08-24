@@ -1060,26 +1060,35 @@ function logSession(sessionKey) {
   const session = SESSIONS[sessionKey];
   const loggedLifts = {};
 
-  session.lifts.forEach((liftKey, liftIndex) => {
+  session.lifts.forEach((liftKey) => {
     const key = LIFT_KEYS[liftKey];
     const isLight = liftKey === 'squat_light';
-    const setConfig = session.sets[liftIndex];
     
-    // Get target reps and find last working set index
-    const workingSets = setConfig.map((s, i) => ({ set: s, index: i })).filter(x => x.set.type === 'working' || x.set.type === 'heavy' || x.set.type === 'back');
-    const targetReps = workingSets.length > 0 ? workingSets[workingSets.length - 1].set.reps : '';
-    const lastWorkSetIdx = workingSets.length > 0 ? workingSets[workingSets.length - 1].index : 0;
+    // Get the sets for this lift (same way they're rendered)
+    const sets = getSetsForLift(liftKey, session.type);
     
-    // Get the status of the last working set
-    const statusKey = `${key}-${lastWorkSetIdx}`;
+    // Find the last "real" working set (type='work', 'heavy', or 'back')
+    const realWorkingSets = sets.map((s, i) => ({ set: s, index: i }))
+      .filter(x => x.set.type !== 'warmup' && x.set.type !== undefined);
+    
+    if (realWorkingSets.length === 0) {
+      console.warn(`No working sets found for ${liftKey}`);
+      return;
+    }
+    
+    const lastWorkSet = realWorkingSets[realWorkingSets.length - 1];
+    const statusKey = `${key}-${lastWorkSet.index}`;
     const setStatus = setDone[statusKey];
     
-    console.log(`Logging ${liftKey} (key=${key}): statusKey=${statusKey}, status=${setStatus}, setDoneKeys=${Object.keys(setDone)}`);
+    const weight = isLight ? r(state.weights[key] * 0.8) : state.weights[key];
+    const reps = lastWorkSet.set.reps;
+    
+    console.log(`Logging ${liftKey}: key=${key}, statusKey=${statusKey}, status=${setStatus}, weight=${weight}, reps=${reps}`);
     
     loggedLifts[liftKey] = {
       name: LIFT_NAMES[liftKey],
-      weight: isLight ? r(state.weights[key] * 0.8) : state.weights[key],
-      reps: targetReps,
+      weight: weight,
+      reps: reps,
       statusKey: statusKey,
       status: setStatus
     };
