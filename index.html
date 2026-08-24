@@ -1060,11 +1060,7 @@ function logSession(sessionKey) {
   const session = SESSIONS[sessionKey];
   const loggedExercises = []; 
 
-  console.log('=== logSession START ===');
-  console.log('setDone object:', setDone);
-  console.log('setDone keys:', Object.keys(setDone));
-
-  session.lifts.forEach((liftKey, liftIndex) => {  // Use liftIndex!
+  session.lifts.forEach((liftKey, liftIndex) => {
     const key = LIFT_KEYS[liftKey];
     
     // Get the sets for this lift
@@ -1080,14 +1076,10 @@ function logSession(sessionKey) {
     const maxWeightSet = workingSets[workingSets.length - 1];
     const maxWeight = maxWeightSet.weight;
     
-    // Find the status of the max weight set - use liftIndex (0, 1, 2...) not the key!
+    // Find the status of the max weight set using liftIndex (0, 1, 2...)
     const maxWeightSetIndex = sets.indexOf(maxWeightSet);
-    const statusKey = `${liftIndex}-${maxWeightSetIndex}`;  // Changed: use liftIndex
+    const statusKey = `${liftIndex}-${maxWeightSetIndex}`;
     const exerciseStatus = setDone[statusKey];
-    
-    console.log(`${liftKey} (index=${liftIndex}): sets.length=${sets.length}, maxWeightSetIndex=${maxWeightSetIndex}, statusKey=${statusKey}, status=${exerciseStatus}`);
-    console.log(`  All sets for ${liftKey}:`, sets.map((s, i) => `[${i}]=${s.type}`).join(', '));
-    console.log(`  setDone[${statusKey}] = ${exerciseStatus}`);
     
     loggedExercises.push({
       exerciseName: LIFT_NAMES[liftKey],
@@ -1096,9 +1088,6 @@ function logSession(sessionKey) {
       status: exerciseStatus
     });
   });
-  
-  console.log('Logged exercises:', loggedExercises);
-  console.log('=== logSession END ===');
 
   const sessionLog = {
     id: Date.now(),
@@ -1752,29 +1741,19 @@ async function readSessionsFromSheet() {
 
 async function appendSessionToSheet(session) {
   try {
-    if (!state.google.token || !state.google.spreadsheetId) {
-      console.warn('No token or spreadsheet ID:', { token: !!state.google.token, sheetId: state.google.spreadsheetId });
-      return;
-    }
+    if (!state.google.token || !state.google.spreadsheetId) return;
     const date = new Date(session.date).toLocaleDateString('en-GB');
     
     // Build one row per exercise: Date | Session | Exercise | Weight | Status
     const rows = (session.exercises || []).map(e => {
       const statusStr = e.status === true ? 'PASS' : e.status === false ? 'FAILED' : 'SKIPPED';
-      console.log(`Syncing ${e.exerciseName}: weight=${e.weight}, status=${statusStr}`);
       return [date, session.session, e.exerciseName, e.weight, statusStr];
     });
     
-    if (rows.length === 0) {
-      console.log('No exercises to sync');
-      return;
-    }
+    if (rows.length === 0) return;
     
-    console.log('Rows to sync:', rows);
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${state.google.spreadsheetId}/values/Sessions!A:E:append?valueInputOption=USER_ENTERED`;
-    console.log('Sync URL:', url);
-    const res = await sheetsRequest(url, 'POST', { values: rows });
-    console.log('Sheets response:', res);
+    await sheetsRequest(url, 'POST', { values: rows });
     await writeStateToSheet();
     showToast('Session synced to Google Sheets ✓', 'success');
   } catch(e) { 
