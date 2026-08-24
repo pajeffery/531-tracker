@@ -1102,23 +1102,20 @@ function logSession(sessionKey) {
   state.sessions.unshift(sessionLog);
   state.totalSessions++;
 
-  // Advance week and increment weights after every C session
-  if (sessionKey === 'C') {
-    state.week++;
-    if (state.deloadActive) {
-      // End deload, resume normal weights without incrementing
-      state.deloadActive = false;
-      state.deloadLifts = [];
-      showToast('Deload complete — back to full weights next session 💪', 'success');
+  // Madcow simple progression: +2.5kg per successful session
+  loggedExercises.forEach((exercise, idx) => {
+    const liftKey = session.lifts[idx];
+    const key = LIFT_KEYS[liftKey];
+    
+    if (exercise.status === false) {
+      // Failed - track consecutive failure
+      state.missedReps[key] = (state.missedReps[key] || 0) + 1;
     } else {
-      Object.keys(state.weights).forEach(k => {
-        state.weights[k] = +(state.weights[k] + 2.5).toFixed(2);
-      });
-      showToast('Cycle complete! +2.5kg added to all lifts 💪', 'success');
+      // Passed - add weight and reset failure counter
+      state.weights[key] = +(state.weights[key] + 2.5).toFixed(2);
+      state.missedReps[key] = 0;
     }
-  } else {
-    showToast(`Session ${sessionKey} logged ✓`, 'success');
-  }
+  });
 
   // Auto-advance to next session
   state.currentSession = sessionKey === 'A' ? 'B' : sessionKey === 'B' ? 'C' : 'A';
@@ -1128,14 +1125,14 @@ function logSession(sessionKey) {
 
   if (state.google.connected && state.google.spreadsheetId) appendSessionToSheet(sessionLog);
   
-  // Check for deload recommendations
+  // Check for deload recommendations (2+ consecutive failures on any lift)
   checkDeloadRecommendation();
   
   renderWorkout();
 }
 
 function checkDeloadRecommendation() {
-  // Check for per-exercise deloads (2+ consecutive failures)
+  // Check for lifts with 2+ consecutive failures
   const liftsThatNeedDeload = [];
   Object.keys(state.missedReps).forEach(key => {
     const missedCount = state.missedReps[key] || 0;
@@ -1145,13 +1142,7 @@ function checkDeloadRecommendation() {
   });
   
   if (liftsThatNeedDeload.length > 0) {
-    showDeloadModal(liftsThatNeedDeload, 'failed');
-    return;
-  }
-  
-  // Check for scheduled deload (every 3 cycles = 9 weeks)
-  if (state.totalSessions % 9 === 0 && state.totalSessions > 0) {
-    showDeloadModal(Object.keys(state.weights), 'scheduled');
+    showDeloadModal(liftsThatNeedDeload);
   }
 }
 
@@ -1167,7 +1158,7 @@ function showDeloadModal(liftsToDeload, type) {
     const liftNames = liftsToDeload.map(k => LIFT_NAMES[k]).join(', ');
     title.textContent = 'Deload Recommended';
     subtitle.textContent = `${liftNames} needs recovery`;
-    details.innerHTML = `<strong>Why:</strong> ${liftNames} had 2+ failed sessions.<br><br><strong>What happens:</strong> These lifts will drop 10% for one session, then resume normal progression.`;
+    details.innerHTML = `<strong>Why:</strong> 2 consecutive failed sessions on ${liftNames}.<br><br><strong>Action:</strong> Drop weight 10% for one session, then resume progression.`;
   } else {
     title.textContent = 'Scheduled Deload Time';
     subtitle.textContent = 'You\'ve completed 3 cycles';
