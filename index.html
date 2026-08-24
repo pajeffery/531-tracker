@@ -1064,14 +1064,22 @@ function logSession(sessionKey) {
     const key = LIFT_KEYS[liftKey];
     const isLight = liftKey === 'squat_light';
     const setConfig = session.sets[liftIndex];
-    // Get target reps from the last working set (or the sole working set)
-    const workingSets = setConfig.filter(s => s.type === 'working');
-    const targetReps = workingSets.length > 0 ? workingSets[workingSets.length - 1].reps : '';
+    
+    // Get target reps and find last working set index
+    const workingSets = setConfig.map((s, i) => ({ set: s, index: i })).filter(x => x.set.type === 'working' || x.set.type === 'heavy' || x.set.type === 'back');
+    const targetReps = workingSets.length > 0 ? workingSets[workingSets.length - 1].set.reps : '';
+    const lastWorkSetIdx = workingSets.length > 0 ? workingSets[workingSets.length - 1].index : 0;
+    
+    // Get the status of the last working set
+    const statusKey = `${key}-${lastWorkSetIdx}`;
+    const setStatus = setDone[statusKey];
+    
     loggedLifts[liftKey] = {
       name: LIFT_NAMES[liftKey],
       weight: isLight ? r(state.weights[key] * 0.8) : state.weights[key],
       reps: targetReps,
-      setIndex: liftIndex
+      statusKey: statusKey,
+      status: setStatus
     };
   });
 
@@ -1727,10 +1735,7 @@ async function appendSessionToSheet(session) {
     if (!state.google.token || !state.google.spreadsheetId) return;
     const date = new Date(session.date).toLocaleDateString('en-GB');
     const rows = Object.values(session.lifts).map(l => {
-      const liftKey = LIFT_KEYS[l.name];
-      const setKey = `${liftKey}-${l.setIndex || 0}`;
-      const status = session.setDone && session.setDone[setKey];
-      const statusStr = status === true ? 'PASS' : status === false ? 'FAILED' : 'SKIPPED';
+      const statusStr = l.status === true ? 'PASS' : l.status === false ? 'FAILED' : 'SKIPPED';
       return [date, session.week, session.session, l.name, l.reps || '', l.weight, statusStr];
     });
     await sheetsRequest(
