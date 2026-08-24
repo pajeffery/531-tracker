@@ -1074,6 +1074,8 @@ function logSession(sessionKey) {
     const statusKey = `${key}-${lastWorkSetIdx}`;
     const setStatus = setDone[statusKey];
     
+    console.log(`Logging ${liftKey} (key=${key}): statusKey=${statusKey}, status=${setStatus}, setDoneKeys=${Object.keys(setDone)}`);
+    
     loggedLifts[liftKey] = {
       name: LIFT_NAMES[liftKey],
       weight: isLight ? r(state.weights[key] * 0.8) : state.weights[key],
@@ -1732,18 +1734,27 @@ async function readSessionsFromSheet() {
 
 async function appendSessionToSheet(session) {
   try {
-    if (!state.google.token || !state.google.spreadsheetId) return;
+    if (!state.google.token || !state.google.spreadsheetId) {
+      console.warn('No token or spreadsheet ID:', { token: !!state.google.token, sheetId: state.google.spreadsheetId });
+      return;
+    }
     const date = new Date(session.date).toLocaleDateString('en-GB');
     const rows = Object.values(session.lifts).map(l => {
       const statusStr = l.status === true ? 'PASS' : l.status === false ? 'FAILED' : 'SKIPPED';
+      console.log(`Syncing ${l.name}: weight=${l.weight}, reps=${l.reps}, status=${statusStr} (raw=${l.status}, statusKey=${l.statusKey})`);
       return [date, session.week, session.session, l.name, l.reps || '', l.weight, statusStr];
     });
-    await sheetsRequest(
-      `https://sheets.googleapis.com/v4/spreadsheets/${state.google.spreadsheetId}/values/Sessions!A:G:append?valueInputOption=USER_ENTERED`,
-      'POST', { values: rows }
-    );
+    console.log('Rows to sync:', rows);
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${state.google.spreadsheetId}/values/Sessions!A:G:append?valueInputOption=USER_ENTERED`;
+    console.log('Sync URL:', url);
+    const res = await sheetsRequest(url, 'POST', { values: rows });
+    console.log('Sheets response:', res);
     await writeStateToSheet();
-  } catch(e) { console.error(e); showToast('Sheet sync failed', 'error'); }
+    showToast('Session synced to Google Sheets ✓', 'success');
+  } catch(e) { 
+    console.error('appendSessionToSheet error:', e);
+    showToast('Sheet sync failed: ' + e.message, 'error'); 
+  }
 }
 
 async function syncStateToSheet() {
