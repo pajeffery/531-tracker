@@ -535,6 +535,7 @@ function greedyPlates(perSide) {
   const available = [25, 20, 15, 10, 5, 2.5, 1.25];
   let remaining = Math.round(perSide * 1000) / 1000;
   const result = [];
+  
   for (const p of available) {
     while (remaining >= p - 0.01) {
       result.push(p);
@@ -544,32 +545,77 @@ function greedyPlates(perSide) {
   return result;
 }
 
+function smartPlates(perSide) {
+  // Try to find the simplest combination with fewest plates
+  // Uses a recursive approach to find minimal plate combinations
+  const plates = [25, 20, 15, 10, 5, 2.5, 1.25];
+  let target = Math.round(perSide * 1000) / 1000;
+  
+  // Try different combinations starting with largest plates
+  const findCombination = (remaining, usedPlates, index) => {
+    remaining = Math.round(remaining * 1000) / 1000;
+    
+    // Base case: found exact match
+    if (Math.abs(remaining) < 0.01) {
+      return usedPlates;
+    }
+    
+    // No more plates to try
+    if (index >= plates.length) {
+      return null;
+    }
+    
+    const plate = plates[index];
+    
+    // Try using this plate multiple times
+    const maxCount = Math.floor(remaining / plate);
+    for (let count = maxCount; count >= 0; count--) {
+      const newRemaining = remaining - (plate * count);
+      if (newRemaining >= -0.01) {
+        // Add this plate 'count' times
+        const newUsed = [...usedPlates, ...Array(count).fill(plate)];
+        
+        // Try to fill rest with smaller plates
+        const result = findCombination(newRemaining, newUsed, index + 1);
+        if (result !== null) {
+          return result;
+        }
+      }
+    }
+    
+    return null;
+  };
+  
+  const result = findCombination(target, [], 0);
+  return result || greedyPlates(perSide);
+}
+
 function bestPlates(targetWeight, liftKey, isWarmup) {
   const bar = state.barWeight || 20;
   const perSide = Math.round(((targetWeight - bar) / 2) * 1000) / 1000;
   if (perSide <= 0) return [];
 
-  const greedy = greedyPlates(perSide);
+  const smart = smartPlates(perSide);
 
-  // Warmup sets always use greedy — clean load
+  // Warmup sets always use smart — clean load
   const prev = prevPlatesPerLift[liftKey];
-  if (isWarmup || !prev) return greedy;
+  if (isWarmup || !prev) return smart;
 
   const prevWeight = Math.round(prev.reduce((a,b) => a+b, 0) * 1000) / 1000;
   const extraNeeded = Math.round((perSide - prevWeight) * 1000) / 1000;
 
   // Only try additive if going heavier
   if (extraNeeded > 0.01) {
-    const extra = greedyPlates(extraNeeded);
+    const extra = smartPlates(extraNeeded);
     const extraTotal = Math.round(extra.reduce((a,b) => a+b, 0) * 1000) / 1000;
     if (Math.abs(extraTotal - extraNeeded) < 0.01) {
       const additive = [...prev, ...extra].sort((a,b) => b-a);
-      // Prefer additive if not more than 2 extra plates vs greedy
-      if (additive.length <= greedy.length + 2) return additive;
+      // Prefer additive if not more than 2 extra plates vs smart
+      if (additive.length <= smart.length + 2) return additive;
     }
   }
 
-  return greedy;
+  return smart;
 }
 
 function calcPlates(targetWeight, liftKey, isWarmup) {
